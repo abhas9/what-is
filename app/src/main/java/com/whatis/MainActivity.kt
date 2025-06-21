@@ -1,18 +1,22 @@
 package com.whatis
-
 import android.app.Activity
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.os.AsyncTask
 import android.os.Bundle
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
 import android.speech.tts.TextToSpeech
+import android.view.ViewGroup
+import android.widget.FrameLayout
 import android.widget.ImageView
+import android.widget.ProgressBar
 import android.content.Intent
 import android.util.Log
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.json.JSONObject
-import java.io.InputStream
 import java.net.HttpURLConnection
 import java.net.URL
 import java.util.*
@@ -26,18 +30,28 @@ class MainActivity : Activity() {
     private lateinit var tts: TextToSpeech
     private lateinit var speechRecognizer: SpeechRecognizer
     private lateinit var imageView: ImageView
-
-    private val localAnswers = hashMapOf(
-        "apple" to "An apple is a yummy red fruit.",
-        "dog" to "A dog is a furry friend that barks.",
-        "cat" to "A cat is a soft animal that says meow.",
-        "elephant" to "An elephant is a big animal with a long nose."
-    )
+    private lateinit var progressBar: ProgressBar
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        val layout = FrameLayout(this)
         imageView = ImageView(this)
-        setContentView(imageView)
+        progressBar = ProgressBar(this)
+        progressBar.visibility = ProgressBar.GONE
+
+        layout.addView(imageView, FrameLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.MATCH_PARENT
+        ))
+        layout.addView(progressBar, FrameLayout.LayoutParams(
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT
+        ).apply {
+            gravity = android.view.Gravity.CENTER
+        })
+
+        setContentView(layout)
 
         tts = TextToSpeech(this) { status ->
             if (status == TextToSpeech.SUCCESS) {
@@ -64,9 +78,10 @@ class MainActivity : Activity() {
 
     private fun handleQuestion(question: String) {
         val keyword = extractKeyword(question)
-        if (localAnswers.containsKey(keyword)) {
+        val localAnswer = LocalAnswerStore.answers[keyword]
+        if (localAnswer != null) {
             fetchImageFromWikipedia(keyword)
-            speakAnswer(localAnswers[keyword] ?: "")
+            speakAnswer(localAnswer)
         } else {
             fetchFromWikipedia(keyword)
         }
@@ -82,10 +97,11 @@ class MainActivity : Activity() {
     }
 
     private fun fetchImageFromWikipedia(keyword: String) {
-        object : AsyncTask<String, Void, Bitmap?>() {
-            override fun doInBackground(vararg params: String): Bitmap? {
-                return try {
-                    val urlStr = "https://en.wikipedia.org/api/rest_v1/page/summary/${params[0]}"
+        progressBar.visibility = ProgressBar.VISIBLE
+        lifecycleScope.launch {
+            val bitmap = withContext(Dispatchers.IO) {
+                try {
+                    val urlStr = "https://en.wikipedia.org/api/rest_v1/page/summary/$keyword"
                     val url = URL(urlStr)
                     val conn = url.openConnection() as HttpURLConnection
                     conn.requestMethod = "GET"
@@ -103,24 +119,18 @@ class MainActivity : Activity() {
                     null
                 }
             }
-
-            override fun onPostExecute(bitmap: Bitmap?) {
-                if (bitmap != null) {
-                    imageView.setImageBitmap(bitmap)
-                } else {
-                    imageView.setImageResource(android.R.drawable.ic_menu_help)
-                }
-            }
-        }.execute(keyword)
+            imageView.setImageBitmap(bitmap ?: getDefaultBitmap())
+            progressBar.visibility = ProgressBar.GONE
+        }
     }
 
     private fun fetchFromWikipedia(keyword: String) {
-        object : AsyncTask<String, Void, String?>() {
+        progressBar.visibility = ProgressBar.VISIBLE
+        lifecycleScope.launch {
             var imageBitmap: Bitmap? = null
-
-            override fun doInBackground(vararg params: String): String? {
-                return try {
-                    val urlStr = "https://en.wikipedia.org/api/rest_v1/page/summary/${params[0]}"
+            val explanation = withContext(Dispatchers.IO) {
+                try {
+                    val urlStr = "https://en.wikipedia.org/api/rest_v1/page/summary/$keyword"
                     val url = URL(urlStr)
                     val conn = url.openConnection() as HttpURLConnection
                     conn.requestMethod = "GET"
@@ -130,10 +140,8 @@ class MainActivity : Activity() {
                     val json = JSONObject(response)
                     val extract = json.optString("extract")
 
-                    val thumbnail = json.optJSONObject("thumbnail")
-                    if (thumbnail != null) {
-                        val imgUrl = thumbnail.getString("source")
-                        val inputStream = URL(imgUrl).openStream()
+                    json.optJSONObject("thumbnail")?.getString("source")?.let {
+                        val inputStream = URL(it).openStream()
                         imageBitmap = BitmapFactory.decodeStream(inputStream)
                     }
 
@@ -144,26 +152,20 @@ class MainActivity : Activity() {
                 }
             }
 
-            override fun onPostExecute(explanation: String?) {
-                if (imageBitmap != null) {
-                    imageView.setImageBitmap(imageBitmap)
-                } else {
-                    imageView.setImageResource(android.R.drawable.ic_menu_help)
-                }
-
-                if (!explanation.isNullOrEmpty()) {
-                    speakAnswer(explanation)
-                } else {
-                    speakAnswer("Hmm, I don't know that yet. Let's ask again later!")
-                }
-            }
-        }.execute(keyword)
+            imageView.setImageBitmap(imageBitmap ?: getDefaultBitmap())
+            speakAnswer(explanation ?: "Hmm, I don't know that yet. Let's ask again later!")
+            progressBar.visibility = ProgressBar.GONE
+        }
     }
 
     private fun simplifyTextForToddlers(extract: String?): String? {
         if (extract.isNullOrEmpty()) return null
         val periodIndex = extract.indexOf(".")
         return if (periodIndex != -1) extract.substring(0, periodIndex + 1) else extract
+    }
+
+    private fun getDefaultBitmap(): Bitmap? {
+        return BitmapFactory.decodeResource(resources, android.R.drawable.ic_menu_help)
     }
 
     override fun onDestroy() {
@@ -174,3 +176,12 @@ class MainActivity : Activity() {
         super.onDestroy()
     }
 }
+
+object LocalAnswerStore {
+    val answers = mapOf(
+        "apple" to "An apple is a yummy red fruit.",
+        "dog" to "A dog is a furry friend that barks.",
+        "cat" to "A cat is a soft animal that says meow.",
+        "elephant" to "An elephant is a big animal with a long nose."
+    )
+} 
