@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="120dp"
+    android:height="80dp"
+    android:viewportWidth="120"
+    android:viewportHeight="80">
+    
+    <!-- Background circle -->
+    <path
+        android:fillColor="#4CAF50"
+        android:pathData="M60,10 C77.67,10 92,20.15 92,32.5 C92,44.85 77.67,55 60,55 C42.33,55 28,44.85 28,32.5 C28,20.15 42.33,10 60,10Z"/>
+    
+    <!-- Question mark symbol -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,20 C58.42,20 62,23.58 62,28 C62,30.5 60.5,32.5 58.5,33.5 L58,34 L58,38 L54,38 L54,32 C56.5,31 58,29.5 58,28 C58,25.79 56.21,24 54,24 C51.79,24 50,25.79 50,28 L46,28 C46,23.58 49.58,20 54,20Z"/>
+    <circle
+        android:fillColor="#FFFFFF"
+        android:cx="56"
+        android:cy="42"
+        android:radius="2"/>
+    
+    <!-- Simple logo design without text - text not supported in vector drawables -->
+    <!-- The question mark in the circle serves as the app logo -->
+</vector>
