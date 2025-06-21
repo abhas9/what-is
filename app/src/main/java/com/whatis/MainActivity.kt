@@ -135,6 +135,8 @@ class MainActivity : Activity() {
         tts = TextToSpeech(this) { status ->
             if (status == TextToSpeech.SUCCESS) {
                 tts.language = Locale.US
+                tts.setPitch(1.3f)     // Higher pitch (1.0 is default)
+                tts.setSpeechRate(0.8f) // Slower speed (1.0 is default)
                 initSpeechRecognizer()
                 startVoiceRecognition()
             }
