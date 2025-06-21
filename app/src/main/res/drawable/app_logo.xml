@@ -20,13 +20,6 @@
         android:cy="42"
         android:radius="2"/>
     
-    <!-- "What Is" text -->
-    <text
-        android:fontFamily="sans-serif-medium"
-        android:textSize="12"
-        android:fillColor="#2E7D32"
-        android:text="What Is"
-        android:x="60"
-        android:y="68"
-        android:textAnchor="middle"/>
+    <!-- Simple logo design without text - text not supported in vector drawables -->
+    <!-- The question mark in the circle serves as the app logo -->
 </vector>
