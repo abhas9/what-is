@@ -49,9 +49,17 @@ class MainActivity : Activity() {
 
         askButton = Button(this).apply {
             text = "Ask again"
-            textSize = 28f
-            setBackgroundColor(Color.parseColor("#FFEB3B"))
-            setTextColor(Color.parseColor("#000000"))
+            textSize = 20f
+            setBackgroundResource(R.drawable.ask_button_selector)
+            setTextColor(ContextCompat.getColor(this@MainActivity, R.color.button_text))
+            elevation = 8f
+            stateListAnimator = null // Remove default state animator to use custom elevation
+            typeface = android.graphics.Typeface.DEFAULT_BOLD
+            setShadowLayer(4f, 2f, 2f, ContextCompat.getColor(this@MainActivity, R.color.button_text_shadow))
+            isAllCaps = false // More friendly appearance
+            letterSpacing = 0.05f // Slight letter spacing for readability
+            minHeight = resources.getDimensionPixelSize(android.R.dimen.app_icon_size) // Ensure accessible touch target
+            contentDescription = "Ask again button - tap to record your voice and ask a question"
             setOnClickListener { startVoiceRecognition() }
         }
 
@@ -84,7 +92,9 @@ class MainActivity : Activity() {
             ViewGroup.LayoutParams.WRAP_CONTENT
         ).apply {
             gravity = Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
-            bottomMargin = 50
+            bottomMargin = 80 // Increased margin for better spacing with gradient button
+            leftMargin = 32
+            rightMargin = 32
         })
         layout.addView(errorText, FrameLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT,

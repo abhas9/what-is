@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    
+    <!-- Pressed state - slightly darker -->
+    <item android:state_pressed="true">
+        <shape android:shape="rectangle">
+            <gradient
+                android:startColor="#FFE65100"
+                android:endColor="#FFF9A825"
+                android:angle="135"
+                android:type="linear" />
+            <corners android:radius="16dp" />
+            <stroke
+                android:width="2dp"
+                android:color="#FFBF360C" />
+            <padding
+                android:left="24dp"
+                android:top="12dp"
+                android:right="24dp"
+                android:bottom="12dp" />
+        </shape>
+    </item>
+    
+    <!-- Focused state - subtle glow effect -->
+    <item android:state_focused="true">
+        <shape android:shape="rectangle">
+            <gradient
+                android:startColor="@color/button_gradient_start"
+                android:endColor="@color/button_gradient_end"
+                android:angle="135"
+                android:type="linear" />
+            <corners android:radius="16dp" />
+            <stroke
+                android:width="3dp"
+                android:color="@color/button_stroke" />
+            <padding
+                android:left="24dp"
+                android:top="12dp"
+                android:right="24dp"
+                android:bottom="12dp" />
+        </shape>
+    </item>
+    
+    <!-- Default state -->
+    <item>
+        <shape android:shape="rectangle">
+            <gradient
+                android:startColor="@color/button_gradient_start"
+                android:endColor="@color/button_gradient_end"
+                android:angle="135"
+                android:type="linear" />
+            <corners android:radius="16dp" />
+            <stroke
+                android:width="2dp"
+                android:color="@color/button_stroke" />
+            <padding
+                android:left="24dp"
+                android:top="12dp"
+                android:right="24dp"
+                android:bottom="12dp" />
+        </shape>
+    </item>
+    
+</selector>
