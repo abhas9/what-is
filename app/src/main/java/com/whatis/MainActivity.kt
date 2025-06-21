@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.os.AsyncTask
 import android.os.Bundle
+import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
 import android.speech.tts.TextToSpeech
@@ -20,7 +21,6 @@ import java.util.*
 
 class MainActivity : Activity() {
     companion object {
-        private const val VOICE_RECOGNITION_REQUEST_CODE = 1001
         private const val TAG = "WhatIsApp"
     }
 
@@ -80,25 +80,48 @@ class MainActivity : Activity() {
         tts = TextToSpeech(this) { status ->
             if (status == TextToSpeech.SUCCESS) {
                 tts.language = Locale.US
+                initSpeechRecognizer()
                 startVoiceRecognition()
             }
         }
     }
 
-    private fun startVoiceRecognition() {
-        errorText.text = ""
-        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
-        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.US)
-        startActivityForResult(intent, VOICE_RECOGNITION_REQUEST_CODE)
+    private fun initSpeechRecognizer() {
+        if (!SpeechRecognizer.isRecognitionAvailable(this)) {
+            Toast.makeText(this, "Speech recognition not available", Toast.LENGTH_LONG).show()
+            return
+        }
+
+        speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this)
+        speechRecognizer.setRecognitionListener(object : RecognitionListener {
+            override fun onReadyForSpeech(params: Bundle?) {}
+            override fun onBeginningOfSpeech() {}
+            override fun onRmsChanged(rmsdB: Float) {}
+            override fun onBufferReceived(buffer: ByteArray?) {}
+            override fun onEndOfSpeech() {}
+            override fun onError(error: Int) {
+                errorText.text = "Speech recognition error: $error"
+            }
+
+            override fun onResults(results: Bundle) {
+                val matches = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+                matches?.firstOrNull()?.let {
+                    handleQuestion(it.lowercase(Locale.ROOT))
+                }
+            }
+
+            override fun onPartialResults(partialResults: Bundle?) {}
+            override fun onEvent(eventType: Int, params: Bundle?) {}
+        })
     }
 
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == VOICE_RECOGNITION_REQUEST_CODE && resultCode == RESULT_OK) {
-            val results = data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
-            results?.firstOrNull()?.let { handleQuestion(it.lowercase(Locale.ROOT)) }
+    private fun startVoiceRecognition() {
+        errorText.text = ""
+        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.US)
         }
+        speechRecognizer.startListening(intent)
     }
 
     private fun handleQuestion(question: String) {
@@ -179,7 +202,7 @@ class MainActivity : Activity() {
                     val inputStream = URL(it).openStream()
                     BitmapFactory.decodeStream(inputStream)
                 }
-                Triple(bitmap, extract, null)
+                Triple(bitmap, explanation, null)
             } catch (e: Exception) {
                 Log.e(TAG, "Wikipedia fetch failed", e)
                 Triple(null, null, e.toString())
@@ -209,10 +232,12 @@ class MainActivity : Activity() {
             tts.stop()
             tts.shutdown()
         }
+        if (::speechRecognizer.isInitialized) {
+            speechRecognizer.destroy()
+        }
         super.onDestroy()
     }
 }
-
 object LocalAnswerStore {
     val answers = mapOf(
         "airplane" to "An airplane flies high in the sky. It has wings and goes zoom! You ride it to faraway places.",
