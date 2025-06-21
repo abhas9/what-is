@@ -1,5 +1,6 @@
 package com.whatis
 
+
 import android.app.Activity
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -104,12 +105,13 @@ class MainActivity : Activity() {
         }
     }
 
-    private fun handleQuestion(question: String) {
+    private suspend fun handleQuestion(question: String) {
         val keyword = extractKeyword(question)
         val localAnswer = LocalAnswerStore.answers[keyword]
         if (localAnswer != null) {
-            fetchImageFromWikipedia(keyword)
-            speakAnswer(localAnswer)
+            lifecycleScope.launch {
+                fetchImageAndShow(keyword, localAnswer)
+            }
         } else {
             fetchFromWikipedia(keyword)
         }
@@ -124,44 +126,43 @@ class MainActivity : Activity() {
         tts.speak(answer, TextToSpeech.QUEUE_FLUSH, null, null)
     }
 
-    private fun fetchImageFromWikipedia(keyword: String) {
+    private suspend fun fetchImageAndShow(keyword: String, answer: String) {
         progressBar.visibility = ProgressBar.VISIBLE
         errorText.text = ""
-        lifecycleScope.launch {
-            val bitmap = withContext(Dispatchers.IO) {
-                try {
-                    val urlStr = "https://en.wikipedia.org/api/rest_v1/page/summary/$keyword"
-                    val url = URL(urlStr)
-                    val conn = url.openConnection() as HttpURLConnection
-                    conn.requestMethod = "GET"
-                    conn.connect()
+        val (bitmap, error) = fetchImage(keyword)
+        imageView.setImageBitmap(bitmap ?: getDefaultBitmap())
+        speakAnswer(answer)
+        progressBar.visibility = ProgressBar.GONE
+        error?.let { errorText.text = it }
+    }
 
-                    val response = conn.inputStream.bufferedReader().use { it.readText() }
-                    val json = JSONObject(response)
-                    val thumbnail = json.optJSONObject("thumbnail")
-                    thumbnail?.getString("source")?.let {
-                        val inputStream = URL(it).openStream()
-                        BitmapFactory.decodeStream(inputStream)
-                    }
-                } catch (e: Exception) {
-                    Log.e(TAG, "Image fetch failed", e)
-                    withContext(Dispatchers.Main) {
-                        errorText.text = e.toString()
-                    }
-                    null
-                }
+    private suspend fun fetchImage(keyword: String): Pair<Bitmap?, String?> = withContext(Dispatchers.IO) {
+        try {
+            val urlStr = "https://en.wikipedia.org/api/rest_v1/page/summary/$keyword"
+            val url = URL(urlStr)
+            val conn = url.openConnection() as HttpURLConnection
+            conn.requestMethod = "GET"
+            conn.connect()
+
+            val response = conn.inputStream.bufferedReader().use { it.readText() }
+            val json = JSONObject(response)
+            val thumbnail = json.optJSONObject("thumbnail")
+            val bitmap = thumbnail?.getString("source")?.let {
+                val inputStream = URL(it).openStream()
+                BitmapFactory.decodeStream(inputStream)
             }
-            imageView.setImageBitmap(bitmap ?: getDefaultBitmap())
-            progressBar.visibility = ProgressBar.GONE
+            Pair(bitmap, null)
+        } catch (e: Exception) {
+            Log.e(TAG, "Image fetch failed", e)
+            Pair(null, e.toString())
         }
     }
 
-    private fun fetchFromWikipedia(keyword: String) {
+    private suspend fun fetchFromWikipedia(keyword: String) {
         progressBar.visibility = ProgressBar.VISIBLE
         errorText.text = ""
         lifecycleScope.launch {
-            var imageBitmap: Bitmap? = null
-            val explanation = withContext(Dispatchers.IO) {
+            val result = withContext(Dispatchers.IO) {
                 try {
                     val urlStr = "https://en.wikipedia.org/api/rest_v1/page/summary/$keyword"
                     val url = URL(urlStr)
@@ -172,25 +173,24 @@ class MainActivity : Activity() {
                     val response = conn.inputStream.bufferedReader().use { it.readText() }
                     val json = JSONObject(response)
                     val extract = json.optString("extract")
+                    val explanation = simplifyTextForToddlers(extract)
 
-                    json.optJSONObject("thumbnail")?.getString("source")?.let {
+                    val bitmap = json.optJSONObject("thumbnail")?.getString("source")?.let {
                         val inputStream = URL(it).openStream()
-                        imageBitmap = BitmapFactory.decodeStream(inputStream)
+                        BitmapFactory.decodeStream(inputStream)
                     }
-
-                    simplifyTextForToddlers(extract)
+                    Triple(bitmap, explanation, null)
                 } catch (e: Exception) {
                     Log.e(TAG, "Wikipedia fetch failed", e)
-                    withContext(Dispatchers.Main) {
-                        errorText.text = e.toString()
-                    }
-                    null
+                    Triple(null, null, e.toString())
                 }
             }
 
-            imageView.setImageBitmap(imageBitmap ?: getDefaultBitmap())
+            val (bitmap, explanation, error) = result
+            imageView.setImageBitmap(bitmap ?: getDefaultBitmap())
             speakAnswer(explanation ?: "Hmm, I don't know that yet. Let's ask again later!")
             progressBar.visibility = ProgressBar.GONE
+            error?.let { errorText.text = it }
         }
     }
 
