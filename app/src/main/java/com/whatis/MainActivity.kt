@@ -16,6 +16,7 @@ import android.speech.SpeechRecognizer
 import android.speech.tts.TextToSpeech
 import android.util.Log
 import android.view.Gravity
+import android.view.View.IMPORTANT_FOR_ACCESSIBILITY_YES
 import android.view.ViewGroup
 import android.widget.*
 import androidx.core.app.ActivityCompat
@@ -155,24 +156,60 @@ class MainActivity : Activity() {
                 "bird", "flower", "fish", "train", "cookie", "book"
             )
             
-            suggestions.forEach { item ->
+            // Colorful drawable resources with corresponding text colors
+            val colorVariants = listOf(
+                Pair(R.drawable.suggestion_button_blue, ContextCompat.getColor(this@MainActivity, R.color.suggestion_text_white)),
+                Pair(R.drawable.suggestion_button_green, ContextCompat.getColor(this@MainActivity, R.color.suggestion_text_white)),
+                Pair(R.drawable.suggestion_button_yellow, ContextCompat.getColor(this@MainActivity, R.color.suggestion_text_dark)),
+                Pair(R.drawable.suggestion_button_orange, ContextCompat.getColor(this@MainActivity, R.color.suggestion_text_white)),
+                Pair(R.drawable.suggestion_button_purple, ContextCompat.getColor(this@MainActivity, R.color.suggestion_text_white)),
+                Pair(R.drawable.suggestion_button_pink, ContextCompat.getColor(this@MainActivity, R.color.suggestion_text_white)),
+                Pair(R.drawable.suggestion_button_teal, ContextCompat.getColor(this@MainActivity, R.color.suggestion_text_white)),
+                Pair(R.drawable.suggestion_button_red, ContextCompat.getColor(this@MainActivity, R.color.suggestion_text_white))
+            )
+            
+            // Content description string resource IDs
+            val contentDescriptions = listOf(
+                R.string.suggestion_button_dog, R.string.suggestion_button_cat, R.string.suggestion_button_car,
+                R.string.suggestion_button_airplane, R.string.suggestion_button_apple, R.string.suggestion_button_ball,
+                R.string.suggestion_button_bird, R.string.suggestion_button_flower, R.string.suggestion_button_fish,
+                R.string.suggestion_button_train, R.string.suggestion_button_cookie, R.string.suggestion_button_book
+            )
+            
+            // Shuffle color variants to ensure random assignment but avoid adjacent duplicates
+            val shuffledColors = colorVariants.shuffled()
+            
+            suggestions.forEachIndexed { index, item ->
+                // Use modulo to cycle through colors if we have more suggestions than colors
+                val colorIndex = index % shuffledColors.size
+                val (backgroundDrawable, textColor) = shuffledColors[colorIndex]
+                
                 val button = Button(this@MainActivity).apply {
                     text = item
-                    textSize = 16f
-                    setBackgroundResource(R.drawable.ask_button_selector)
-                    setTextColor(ContextCompat.getColor(this@MainActivity, R.color.button_text))
-                    elevation = 4f
+                    textSize = 22f  // Increased from 16f for better child readability
+                    setBackgroundResource(backgroundDrawable)
+                    setTextColor(textColor)
+                    elevation = 6f  // Increased elevation for better depth
                     typeface = android.graphics.Typeface.DEFAULT_BOLD
                     isAllCaps = false
                     letterSpacing = 0.05f
                     
-                    // Set layout params for grid positioning
+                    // Accessibility enhancements
+                    contentDescription = getString(contentDescriptions[index])
+                    importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_YES
+                    
+                    // Ensure minimum touch target size (48dp)
+                    val minTouchTarget = resources.getDimensionPixelSize(android.R.dimen.app_icon_size)
+                    minHeight = minTouchTarget
+                    minWidth = minTouchTarget
+                    
+                    // Set layout params for grid positioning with increased margins for better spacing
                     val params = GridLayout.LayoutParams().apply {
                         width = 0
                         height = GridLayout.LayoutParams.WRAP_CONTENT
                         columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f)
                         rowSpec = GridLayout.spec(GridLayout.UNDEFINED)
-                        setMargins(8, 8, 8, 8)
+                        setMargins(12, 12, 12, 12)  // Increased margins from 8dp to 12dp
                     }
                     layoutParams = params
                     
