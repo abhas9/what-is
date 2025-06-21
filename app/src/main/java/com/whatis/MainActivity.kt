@@ -40,6 +40,7 @@ class MainActivity : Activity() {
     private lateinit var errorText: TextView
     private lateinit var listeningIndicator: TextView
     private lateinit var suggestionsGrid: GridLayout
+    private lateinit var logoImageView: ImageView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -83,6 +84,14 @@ class MainActivity : Activity() {
 
         createSuggestionsGrid()
 
+        logoImageView = ImageView(this).apply {
+            setImageResource(R.drawable.app_logo)
+            scaleType = ImageView.ScaleType.FIT_CENTER
+            contentDescription = "What Is app logo"
+            importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_YES
+            visibility = ImageView.GONE // Initially hidden, shown with suggestions grid
+        }
+
         layout.addView(imageView, FrameLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT,
             ViewGroup.LayoutParams.MATCH_PARENT
@@ -115,6 +124,15 @@ class MainActivity : Activity() {
         ).apply {
             gravity = Gravity.CENTER_HORIZONTAL or Gravity.TOP
             topMargin = 100
+        })
+        layout.addView(logoImageView, FrameLayout.LayoutParams(
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT
+        ).apply {
+            gravity = Gravity.CENTER_HORIZONTAL or Gravity.TOP
+            topMargin = 180 // Position below listeningIndicator and above suggestions
+            leftMargin = 32
+            rightMargin = 32
         })
         layout.addView(suggestionsGrid, FrameLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT,
@@ -225,10 +243,12 @@ class MainActivity : Activity() {
 
     private fun showSuggestionsGrid() {
         suggestionsGrid.visibility = GridLayout.VISIBLE
+        logoImageView.visibility = ImageView.VISIBLE
     }
 
     private fun hideSuggestionsGrid() {
         suggestionsGrid.visibility = GridLayout.GONE
+        logoImageView.visibility = ImageView.GONE
     }
 
     override fun onRequestPermissionsResult(
