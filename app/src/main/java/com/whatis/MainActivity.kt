@@ -38,6 +38,7 @@ class MainActivity : Activity() {
     private lateinit var askButton: Button
     private lateinit var errorText: TextView
     private lateinit var listeningIndicator: TextView
+    private lateinit var suggestionsGrid: GridLayout
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -60,7 +61,13 @@ class MainActivity : Activity() {
             letterSpacing = 0.05f // Slight letter spacing for readability
             minHeight = resources.getDimensionPixelSize(android.R.dimen.app_icon_size) // Ensure accessible touch target
             contentDescription = "Ask again button - tap to record your voice and ask a question"
-            setOnClickListener { startVoiceRecognition() }
+            setOnClickListener { 
+                if (suggestionsGrid.visibility == GridLayout.VISIBLE) {
+                    startVoiceRecognition()
+                } else {
+                    showSuggestionsGrid()
+                }
+            }
         }
 
         errorText = TextView(this).apply {
@@ -76,6 +83,8 @@ class MainActivity : Activity() {
             gravity = Gravity.CENTER
             visibility = TextView.GONE
         }
+
+        createSuggestionsGrid()
 
         layout.addView(imageView, FrameLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT,
@@ -110,6 +119,15 @@ class MainActivity : Activity() {
             gravity = Gravity.CENTER_HORIZONTAL or Gravity.TOP
             topMargin = 100
         })
+        layout.addView(suggestionsGrid, FrameLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT
+        ).apply {
+            gravity = Gravity.CENTER
+            leftMargin = 32
+            rightMargin = 32
+            bottomMargin = 160 // Position above the "Ask Again" button
+        })
 
         setContentView(layout)
 
@@ -126,8 +144,61 @@ class MainActivity : Activity() {
         }
     }
 
- override fun onRequestPermissionsResult(
-        requestCode: Int,
+    private fun createSuggestionsGrid() {
+        suggestionsGrid = GridLayout(this).apply {
+            columnCount = 3
+            rowCount = 4
+            
+            // Popular items from LocalAnswerStore that children would find interesting
+            val suggestions = listOf(
+                "dog", "cat", "car", "airplane", "apple", "ball", 
+                "bird", "flower", "fish", "train", "cookie", "book"
+            )
+            
+            suggestions.forEach { item ->
+                val button = Button(this@MainActivity).apply {
+                    text = item
+                    textSize = 16f
+                    setBackgroundResource(R.drawable.ask_button_selector)
+                    setTextColor(ContextCompat.getColor(this@MainActivity, R.color.button_text))
+                    elevation = 4f
+                    typeface = android.graphics.Typeface.DEFAULT_BOLD
+                    isAllCaps = false
+                    letterSpacing = 0.05f
+                    
+                    // Set layout params for grid positioning
+                    val params = GridLayout.LayoutParams().apply {
+                        width = 0
+                        height = GridLayout.LayoutParams.WRAP_CONTENT
+                        columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f)
+                        rowSpec = GridLayout.spec(GridLayout.UNDEFINED)
+                        setMargins(8, 8, 8, 8)
+                    }
+                    layoutParams = params
+                    
+                    setOnClickListener {
+                        handleSuggestionClick(item)
+                    }
+                }
+                addView(button)
+            }
+        }
+    }
+
+    private fun handleSuggestionClick(item: String) {
+        hideSuggestionsGrid()
+        handleQuestion("what is $item")
+    }
+
+    private fun showSuggestionsGrid() {
+        suggestionsGrid.visibility = GridLayout.VISIBLE
+    }
+
+    private fun hideSuggestionsGrid() {
+        suggestionsGrid.visibility = GridLayout.GONE
+    }
+
+    override fun onRequestPermissionsResult(
         permissions: Array<out String>,
         grantResults: IntArray
     ) {
@@ -138,6 +209,7 @@ class MainActivity : Activity() {
             setupSpeechAndTTS()
         } else {
             Toast.makeText(this, "Microphone permission is required to use speech input", Toast.LENGTH_LONG).show()
+            showSuggestionsGrid()
         }
     }
 
@@ -148,7 +220,7 @@ class MainActivity : Activity() {
                 tts.setPitch(1.3f)     // Higher pitch (1.0 is default)
                 tts.setSpeechRate(0.8f) // Slower speed (1.0 is default)
                 initSpeechRecognizer()
-                startVoiceRecognition()
+                showSuggestionsGrid()
             }
         }
     }
@@ -175,6 +247,7 @@ class MainActivity : Activity() {
             override fun onError(error: Int) {
                 listeningIndicator.visibility = TextView.GONE
                 errorText.text = "Speech recognition error: $error"
+                showSuggestionsGrid()
             }
 
             override fun onResults(results: Bundle) {
@@ -192,6 +265,7 @@ class MainActivity : Activity() {
 
     private fun startVoiceRecognition() {
         errorText.text = ""
+        hideSuggestionsGrid()
         val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
             putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
             putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.US)
@@ -200,6 +274,7 @@ class MainActivity : Activity() {
     }
 
     private fun handleQuestion(question: String) {
+        hideSuggestionsGrid()
         val keyword = extractKeyword(question)
         val localAnswer = LocalAnswerStore.answers[keyword]
         if (localAnswer != null) {
