@@ -440,7 +440,10 @@ class MainActivity : Activity() {
                 // First, try to find child-friendly topics based on keywords
                 val childFriendlyKeywords = listOf(
                     "animal", "fruit", "food", "toy", "plant", "color", "flower", 
-                    "bird", "fish", "insect", "tree", "game", "book", "movie"
+                    "bird", "fish", "insect", "tree", "game", "book", "movie",
+                    "pet", "dog", "cat", "bear", "elephant", "lion", "tiger",
+                    "apple", "banana", "orange", "berry", "vegetable", "cookie",
+                    "car", "truck", "train", "airplane", "boat", "ship"
                 )
                 
                 for (line in lines) {
@@ -496,8 +499,14 @@ class MainActivity : Activity() {
             // Remove common patterns and extract the main title
             var cleanLine = line.removeSuffix(".").removeSuffix(",")
             
-            // Handle patterns like "Title, description" or "Title (year)" or "Title - description"
-            val patterns = listOf(",", "(", " -", " –", " —")
+            // Handle patterns like "Title, description" first, then parentheses
+            val commaIndex = cleanLine.indexOf(",")
+            if (commaIndex > 2) {
+                cleanLine = cleanLine.substring(0, commaIndex).trim()
+            }
+            
+            // Then handle patterns like "Title (year)" or "Title - description"
+            val patterns = listOf("(", " -", " –", " —")
             for (pattern in patterns) {
                 val index = cleanLine.indexOf(pattern)
                 if (index > 2) {
