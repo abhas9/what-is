@@ -22,6 +22,7 @@ import java.util.*
 class MainActivity : Activity() {
     companion object {
         private const val TAG = "WhatIsApp"
+        private const val REQUEST_RECORD_AUDIO_PERMISSION = 1
     }
 
     private lateinit var tts: TextToSpeech
@@ -77,6 +78,36 @@ class MainActivity : Activity() {
 
         setContentView(layout)
 
+        // Request microphone permission
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
+            != PackageManager.PERMISSION_GRANTED
+        ) {
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(Manifest.permission.RECORD_AUDIO),
+                REQUEST_RECORD_AUDIO_PERMISSION
+            )
+        } else {
+            setupSpeechAndTTS()
+        }
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == REQUEST_RECORD_AUDIO_PERMISSION && grantResults.isNotEmpty()
+            && grantResults[0] == PackageManager.PERMISSION_GRANTED
+        ) {
+            setupSpeechAndTTS()
+        } else {
+            Toast.makeText(this, "Microphone permission is required to use speech input", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun setupSpeechAndTTS() {
         tts = TextToSpeech(this) { status ->
             if (status == TextToSpeech.SUCCESS) {
                 tts.language = Locale.US
