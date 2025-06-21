@@ -14,4 +14,29 @@
     <color name="button_stroke">#FFE65100</color>
     <color name="button_text">#FFFFFFFF</color>
     <color name="button_text_shadow">#80000000</color>
+    
+    <!-- Suggestion Grid - Child-Friendly Color Palette -->
+    <!-- Primary bright colors with high contrast -->
+    <color name="suggestion_bright_blue">#FF1976D2</color>        <!-- Material Blue 700 -->
+    <color name="suggestion_bright_green">#FF2E7D32</color>       <!-- Material Green 800 (darker for better contrast) -->
+    <color name="suggestion_sunny_yellow">#FFFBC02D</color>      <!-- Material Yellow 600 -->
+    <color name="suggestion_warm_orange">#FFBF360C</color>       <!-- Material Orange A700 (darkest for better contrast) -->
+    <color name="suggestion_vibrant_purple">#FF7B1FA2</color>    <!-- Material Purple 700 -->
+    <color name="suggestion_playful_pink">#FFC2185B</color>      <!-- Material Pink 700 -->
+    <color name="suggestion_cheerful_teal">#FF00796B</color>     <!-- Material Teal 700 -->
+    <color name="suggestion_bright_red">#FFD32F2F</color>        <!-- Material Red 700 -->
+    
+    <!-- Pressed states (slightly darker) -->
+    <color name="suggestion_bright_blue_pressed">#FF1565C0</color>
+    <color name="suggestion_bright_green_pressed">#FF1B5E20</color>  <!-- Updated for darker green -->
+    <color name="suggestion_sunny_yellow_pressed">#FFF9A825</color>
+    <color name="suggestion_warm_orange_pressed">#FF8F2B00</color>   <!-- Updated for darker orange -->
+    <color name="suggestion_vibrant_purple_pressed">#FF6A1B99</color>
+    <color name="suggestion_playful_pink_pressed">#FFAD1457</color>
+    <color name="suggestion_cheerful_teal_pressed">#FF00695C</color>
+    <color name="suggestion_bright_red_pressed">#FFC62828</color>
+    
+    <!-- Text colors optimized for contrast on each background -->
+    <color name="suggestion_text_white">#FFFFFFFF</color>         <!-- For all dark backgrounds -->
+    <color name="suggestion_text_dark">#FF1A1A1A</color>          <!-- For yellow background -->
 </resources>

@@ -1,3 +1,17 @@
 <resources>
     <string name="app_name">What Is</string>
+    
+    <!-- Suggestion button content descriptions -->
+    <string name="suggestion_button_dog">Ask what is a dog</string>
+    <string name="suggestion_button_cat">Ask what is a cat</string>
+    <string name="suggestion_button_car">Ask what is a car</string>
+    <string name="suggestion_button_airplane">Ask what is an airplane</string>
+    <string name="suggestion_button_apple">Ask what is an apple</string>
+    <string name="suggestion_button_ball">Ask what is a ball</string>
+    <string name="suggestion_button_bird">Ask what is a bird</string>
+    <string name="suggestion_button_flower">Ask what is a flower</string>
+    <string name="suggestion_button_fish">Ask what is a fish</string>
+    <string name="suggestion_button_train">Ask what is a train</string>
+    <string name="suggestion_button_cookie">Ask what is a cookie</string>
+    <string name="suggestion_button_book">Ask what is a book</string>
 </resources>
