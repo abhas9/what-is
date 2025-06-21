@@ -179,7 +179,7 @@ class MainActivity : Activity() {
                         val inputStream = URL(it).openStream()
                         BitmapFactory.decodeStream(inputStream)
                     }
-                    Triple(bitmap, explanation, null)
+                    Triple(bitmap, extract, null)
                 } catch (e: Exception) {
                     Log.e(TAG, "Wikipedia fetch failed", e)
                     Triple(null, null, e.toString())
