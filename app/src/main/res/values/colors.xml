@@ -18,9 +18,9 @@
     <!-- Suggestion Grid - Child-Friendly Color Palette -->
     <!-- Primary bright colors with high contrast -->
     <color name="suggestion_bright_blue">#FF1976D2</color>        <!-- Material Blue 700 -->
-    <color name="suggestion_bright_green">#FF388E3C</color>       <!-- Material Green 700 -->
+    <color name="suggestion_bright_green">#FF2E7D32</color>       <!-- Material Green 800 (darker for better contrast) -->
     <color name="suggestion_sunny_yellow">#FFFBC02D</color>      <!-- Material Yellow 600 -->
-    <color name="suggestion_warm_orange">#FFF57C00</color>       <!-- Material Orange 600 -->
+    <color name="suggestion_warm_orange">#FFBF360C</color>       <!-- Material Orange A700 (darkest for better contrast) -->
     <color name="suggestion_vibrant_purple">#FF7B1FA2</color>    <!-- Material Purple 700 -->
     <color name="suggestion_playful_pink">#FFC2185B</color>      <!-- Material Pink 700 -->
     <color name="suggestion_cheerful_teal">#FF00796B</color>     <!-- Material Teal 700 -->
@@ -28,9 +28,9 @@
     
     <!-- Pressed states (slightly darker) -->
     <color name="suggestion_bright_blue_pressed">#FF1565C0</color>
-    <color name="suggestion_bright_green_pressed">#FF2E7D32</color>
+    <color name="suggestion_bright_green_pressed">#FF1B5E20</color>  <!-- Updated for darker green -->
     <color name="suggestion_sunny_yellow_pressed">#FFF9A825</color>
-    <color name="suggestion_warm_orange_pressed">#FFEF6C00</color>
+    <color name="suggestion_warm_orange_pressed">#FF8F2B00</color>   <!-- Updated for darker orange -->
     <color name="suggestion_vibrant_purple_pressed">#FF6A1B99</color>
     <color name="suggestion_playful_pink_pressed">#FFAD1457</color>
     <color name="suggestion_cheerful_teal_pressed">#FF00695C</color>
