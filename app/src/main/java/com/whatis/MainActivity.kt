@@ -1,4 +1,5 @@
 package com.whatis
+
 import android.app.Activity
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -6,10 +7,9 @@ import android.os.Bundle
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
 import android.speech.tts.TextToSpeech
+import android.view.Gravity
 import android.view.ViewGroup
-import android.widget.FrameLayout
-import android.widget.ImageView
-import android.widget.ProgressBar
+import android.widget.*
 import android.content.Intent
 import android.util.Log
 import androidx.lifecycle.lifecycleScope
@@ -31,6 +31,8 @@ class MainActivity : Activity() {
     private lateinit var speechRecognizer: SpeechRecognizer
     private lateinit var imageView: ImageView
     private lateinit var progressBar: ProgressBar
+    private lateinit var askButton: Button
+    private lateinit var errorText: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -40,6 +42,17 @@ class MainActivity : Activity() {
         progressBar = ProgressBar(this)
         progressBar.visibility = ProgressBar.GONE
 
+        askButton = Button(this).apply {
+            text = "Ask again"
+            setOnClickListener { startVoiceRecognition() }
+        }
+
+        errorText = TextView(this).apply {
+            textSize = 14f
+            setTextColor(android.graphics.Color.RED)
+            gravity = Gravity.CENTER
+        }
+
         layout.addView(imageView, FrameLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT,
             ViewGroup.LayoutParams.MATCH_PARENT
@@ -48,7 +61,21 @@ class MainActivity : Activity() {
             ViewGroup.LayoutParams.WRAP_CONTENT,
             ViewGroup.LayoutParams.WRAP_CONTENT
         ).apply {
-            gravity = android.view.Gravity.CENTER
+            gravity = Gravity.CENTER
+        })
+        layout.addView(askButton, FrameLayout.LayoutParams(
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT
+        ).apply {
+            gravity = Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
+            bottomMargin = 50
+        })
+        layout.addView(errorText, FrameLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT
+        ).apply {
+            gravity = Gravity.TOP
+            topMargin = 50
         })
 
         setContentView(layout)
@@ -62,6 +89,7 @@ class MainActivity : Activity() {
     }
 
     private fun startVoiceRecognition() {
+        errorText.text = ""
         val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
         intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
         intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.US)
@@ -98,6 +126,7 @@ class MainActivity : Activity() {
 
     private fun fetchImageFromWikipedia(keyword: String) {
         progressBar.visibility = ProgressBar.VISIBLE
+        errorText.text = ""
         lifecycleScope.launch {
             val bitmap = withContext(Dispatchers.IO) {
                 try {
@@ -116,6 +145,9 @@ class MainActivity : Activity() {
                     }
                 } catch (e: Exception) {
                     Log.e(TAG, "Image fetch failed", e)
+                    withContext(Dispatchers.Main) {
+                        errorText.text = e.toString()
+                    }
                     null
                 }
             }
@@ -126,6 +158,7 @@ class MainActivity : Activity() {
 
     private fun fetchFromWikipedia(keyword: String) {
         progressBar.visibility = ProgressBar.VISIBLE
+        errorText.text = ""
         lifecycleScope.launch {
             var imageBitmap: Bitmap? = null
             val explanation = withContext(Dispatchers.IO) {
@@ -148,6 +181,9 @@ class MainActivity : Activity() {
                     simplifyTextForToddlers(extract)
                 } catch (e: Exception) {
                     Log.e(TAG, "Wikipedia fetch failed", e)
+                    withContext(Dispatchers.Main) {
+                        errorText.text = e.toString()
+                    }
                     null
                 }
             }
@@ -184,4 +220,4 @@ object LocalAnswerStore {
         "cat" to "A cat is a soft animal that says meow.",
         "elephant" to "An elephant is a big animal with a long nose."
     )
-} 
+}
