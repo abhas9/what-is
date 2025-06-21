@@ -1,9 +1,9 @@
 package com.whatis
 
-
 import android.app.Activity
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.os.AsyncTask
 import android.os.Bundle
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
@@ -13,10 +13,6 @@ import android.view.ViewGroup
 import android.widget.*
 import android.content.Intent
 import android.util.Log
-import androidx.lifecycle.lifecycleScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
@@ -105,15 +101,13 @@ class MainActivity : Activity() {
         }
     }
 
-    private suspend fun handleQuestion(question: String) {
+    private fun handleQuestion(question: String) {
         val keyword = extractKeyword(question)
         val localAnswer = LocalAnswerStore.answers[keyword]
         if (localAnswer != null) {
-            lifecycleScope.launch {
-                fetchImageAndShow(keyword, localAnswer)
-            }
+            FetchImageTask(keyword, localAnswer).execute()
         } else {
-            fetchFromWikipedia(keyword)
+            FetchFromWikipediaTask(keyword).execute()
         }
     }
 
@@ -126,71 +120,77 @@ class MainActivity : Activity() {
         tts.speak(answer, TextToSpeech.QUEUE_FLUSH, null, null)
     }
 
-    private suspend fun fetchImageAndShow(keyword: String, answer: String) {
-        progressBar.visibility = ProgressBar.VISIBLE
-        errorText.text = ""
-        val (bitmap, error) = fetchImage(keyword)
-        imageView.setImageBitmap(bitmap ?: getDefaultBitmap())
-        speakAnswer(answer)
-        progressBar.visibility = ProgressBar.GONE
-        error?.let { errorText.text = it }
-    }
+    private inner class FetchImageTask(val keyword: String, val answer: String) : AsyncTask<Void, Void, Pair<Bitmap?, String?>>() {
+        override fun onPreExecute() {
+            progressBar.visibility = ProgressBar.VISIBLE
+            errorText.text = ""
+        }
 
-    private suspend fun fetchImage(keyword: String): Pair<Bitmap?, String?> = withContext(Dispatchers.IO) {
-        try {
-            val urlStr = "https://en.wikipedia.org/api/rest_v1/page/summary/$keyword"
-            val url = URL(urlStr)
-            val conn = url.openConnection() as HttpURLConnection
-            conn.requestMethod = "GET"
-            conn.connect()
+        override fun doInBackground(vararg params: Void?): Pair<Bitmap?, String?> {
+            return try {
+                val urlStr = "https://en.wikipedia.org/api/rest_v1/page/summary/$keyword"
+                val url = URL(urlStr)
+                val conn = url.openConnection() as HttpURLConnection
+                conn.requestMethod = "GET"
+                conn.connect()
 
-            val response = conn.inputStream.bufferedReader().use { it.readText() }
-            val json = JSONObject(response)
-            val thumbnail = json.optJSONObject("thumbnail")
-            val bitmap = thumbnail?.getString("source")?.let {
-                val inputStream = URL(it).openStream()
-                BitmapFactory.decodeStream(inputStream)
+                val response = conn.inputStream.bufferedReader().use { it.readText() }
+                val json = JSONObject(response)
+                val thumbnail = json.optJSONObject("thumbnail")
+                val bitmap = thumbnail?.getString("source")?.let {
+                    val inputStream = URL(it).openStream()
+                    BitmapFactory.decodeStream(inputStream)
+                }
+                Pair(bitmap, null)
+            } catch (e: Exception) {
+                Log.e(TAG, "Image fetch failed", e)
+                Pair(null, e.toString())
             }
-            Pair(bitmap, null)
-        } catch (e: Exception) {
-            Log.e(TAG, "Image fetch failed", e)
-            Pair(null, e.toString())
+        }
+
+        override fun onPostExecute(result: Pair<Bitmap?, String?>) {
+            imageView.setImageBitmap(result.first ?: getDefaultBitmap())
+            speakAnswer(answer)
+            progressBar.visibility = ProgressBar.GONE
+            result.second?.let { errorText.text = it }
         }
     }
 
-    private suspend fun fetchFromWikipedia(keyword: String) {
-        progressBar.visibility = ProgressBar.VISIBLE
-        errorText.text = ""
-        lifecycleScope.launch {
-            val result = withContext(Dispatchers.IO) {
-                try {
-                    val urlStr = "https://en.wikipedia.org/api/rest_v1/page/summary/$keyword"
-                    val url = URL(urlStr)
-                    val conn = url.openConnection() as HttpURLConnection
-                    conn.requestMethod = "GET"
-                    conn.connect()
+    private inner class FetchFromWikipediaTask(val keyword: String) : AsyncTask<Void, Void, Triple<Bitmap?, String?, String?>>() {
+        override fun onPreExecute() {
+            progressBar.visibility = ProgressBar.VISIBLE
+            errorText.text = ""
+        }
 
-                    val response = conn.inputStream.bufferedReader().use { it.readText() }
-                    val json = JSONObject(response)
-                    val extract = json.optString("extract")
-                    val explanation = simplifyTextForToddlers(extract)
+        override fun doInBackground(vararg params: Void?): Triple<Bitmap?, String?, String?> {
+            return try {
+                val urlStr = "https://en.wikipedia.org/api/rest_v1/page/summary/$keyword"
+                val url = URL(urlStr)
+                val conn = url.openConnection() as HttpURLConnection
+                conn.requestMethod = "GET"
+                conn.connect()
 
-                    val bitmap = json.optJSONObject("thumbnail")?.getString("source")?.let {
-                        val inputStream = URL(it).openStream()
-                        BitmapFactory.decodeStream(inputStream)
-                    }
-                    Triple(bitmap, extract, null)
-                } catch (e: Exception) {
-                    Log.e(TAG, "Wikipedia fetch failed", e)
-                    Triple(null, null, e.toString())
+                val response = conn.inputStream.bufferedReader().use { it.readText() }
+                val json = JSONObject(response)
+                val extract = json.optString("extract")
+                val explanation = simplifyTextForToddlers(extract)
+
+                val bitmap = json.optJSONObject("thumbnail")?.getString("source")?.let {
+                    val inputStream = URL(it).openStream()
+                    BitmapFactory.decodeStream(inputStream)
                 }
+                Triple(bitmap, extract, null)
+            } catch (e: Exception) {
+                Log.e(TAG, "Wikipedia fetch failed", e)
+                Triple(null, null, e.toString())
             }
+        }
 
-            val (bitmap, explanation, error) = result
-            imageView.setImageBitmap(bitmap ?: getDefaultBitmap())
-            speakAnswer(explanation ?: "Hmm, I don't know that yet. Let's ask again later!")
+        override fun onPostExecute(result: Triple<Bitmap?, String?, String?>) {
+            imageView.setImageBitmap(result.first ?: getDefaultBitmap())
+            speakAnswer(result.second ?: "Hmm, I don't know that yet. Let's ask again later!")
             progressBar.visibility = ProgressBar.GONE
-            error?.let { errorText.text = it }
+            result.third?.let { errorText.text = it }
         }
     }
 
