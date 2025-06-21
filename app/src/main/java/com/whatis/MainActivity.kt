@@ -36,6 +36,7 @@ class MainActivity : Activity() {
     private lateinit var progressBar: ProgressBar
     private lateinit var askButton: Button
     private lateinit var errorText: TextView
+    private lateinit var listeningIndicator: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -54,6 +55,14 @@ class MainActivity : Activity() {
             textSize = 14f
             setTextColor(android.graphics.Color.RED)
             gravity = Gravity.CENTER
+        }
+
+        listeningIndicator = TextView(this).apply {
+            text = "Listening..."
+            textSize = 18f
+            setTextColor(android.graphics.Color.GREEN)
+            gravity = Gravity.CENTER
+            visibility = TextView.GONE
         }
 
         layout.addView(imageView, FrameLayout.LayoutParams(
@@ -80,10 +89,16 @@ class MainActivity : Activity() {
             gravity = Gravity.TOP
             topMargin = 50
         })
+        layout.addView(listeningIndicator, FrameLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT
+        ).apply {
+            gravity = Gravity.CENTER_HORIZONTAL or Gravity.TOP
+            topMargin = 100
+        })
 
         setContentView(layout)
 
-        // Request microphone permission
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
             != PackageManager.PERMISSION_GRANTED
         ) {
@@ -97,7 +112,7 @@ class MainActivity : Activity() {
         }
     }
 
-    override fun onRequestPermissionsResult(
+ override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<out String>,
         grantResults: IntArray
@@ -130,16 +145,24 @@ class MainActivity : Activity() {
 
         speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this)
         speechRecognizer.setRecognitionListener(object : RecognitionListener {
-            override fun onReadyForSpeech(params: Bundle?) {}
+            override fun onReadyForSpeech(params: Bundle?) {
+                listeningIndicator.visibility = TextView.VISIBLE
+            }
+
             override fun onBeginningOfSpeech() {}
             override fun onRmsChanged(rmsdB: Float) {}
             override fun onBufferReceived(buffer: ByteArray?) {}
-            override fun onEndOfSpeech() {}
+            override fun onEndOfSpeech() {
+                listeningIndicator.visibility = TextView.GONE
+            }
+
             override fun onError(error: Int) {
+                listeningIndicator.visibility = TextView.GONE
                 errorText.text = "Speech recognition error: $error"
             }
 
             override fun onResults(results: Bundle) {
+                listeningIndicator.visibility = TextView.GONE
                 val matches = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
                 matches?.firstOrNull()?.let {
                     handleQuestion(it.lowercase(Locale.ROOT))
@@ -195,7 +218,7 @@ class MainActivity : Activity() {
 
                 val response = conn.inputStream.bufferedReader().use { it.readText() }
                 val json = JSONObject(response)
-                val thumbnail = json.optJSONObject("thumbnail")
+                val thumbnail = json.optJSONObject("originalimage")
                 val bitmap = thumbnail?.getString("source")?.let {
                     val inputStream = URL(it).openStream()
                     BitmapFactory.decodeStream(inputStream)
