@@ -322,7 +322,7 @@ class MainActivity : Activity() {
         }
     }
 
-    private fun extractKeyword(question: String): String {
+    internal fun extractKeyword(question: String): String {
         val parts = question.split(" ")
         return parts.last()
     }
@@ -375,25 +375,159 @@ class MainActivity : Activity() {
 
         override fun doInBackground(vararg params: Void?): Triple<Bitmap?, String?, String?> {
             return try {
-                val urlStr = "https://en.wikipedia.org/api/rest_v1/page/summary/$keyword"
-                val url = URL(urlStr)
-                val conn = url.openConnection() as HttpURLConnection
-                conn.requestMethod = "GET"
-                conn.connect()
-
-                val response = conn.inputStream.bufferedReader().use { it.readText() }
-                val json = JSONObject(response)
-                val extract = json.optString("extract")
-                val explanation = simplifyTextForToddlers(extract)
-
-                val bitmap = json.optJSONObject("thumbnail")?.getString("source")?.let {
-                    val inputStream = URL(it).openStream()
-                    BitmapFactory.decodeStream(inputStream)
-                }
-                Triple(bitmap, explanation, null)
+                val result = fetchWikipediaContent(keyword, maxDepth = 2)
+                result
             } catch (e: Exception) {
                 Log.e(TAG, "Wikipedia fetch failed", e)
                 Triple(null, null, e.toString())
+            }
+        }
+
+        private fun fetchWikipediaContent(searchTerm: String, maxDepth: Int = 2): Triple<Bitmap?, String?, String?> {
+            if (maxDepth <= 0) {
+                // Reached maximum depth, return disambiguation message
+                val disambiguationMessage = createDisambiguationMessage(searchTerm)
+                return Triple(null, disambiguationMessage, null)
+            }
+            
+            val urlStr = "https://en.wikipedia.org/api/rest_v1/page/summary/$searchTerm"
+            val url = URL(urlStr)
+            val conn = url.openConnection() as HttpURLConnection
+            conn.requestMethod = "GET"
+            conn.connect()
+
+            val response = conn.inputStream.bufferedReader().use { it.readText() }
+            val json = JSONObject(response)
+            
+            // Check if this is a disambiguation page
+            val pageType = json.optString("type")
+            if (pageType == "disambiguation") {
+                Log.d(TAG, "Disambiguation page detected for: $searchTerm")
+                
+                // Try to find a suitable alternative from disambiguation content
+                val alternativeTitle = extractDisambiguationAlternative(json)
+                if (alternativeTitle != null && alternativeTitle != searchTerm) {
+                    Log.d(TAG, "Trying alternative: $alternativeTitle")
+                    // Recursively fetch the alternative with reduced depth
+                    return fetchWikipediaContent(alternativeTitle, maxDepth - 1)
+                } else {
+                    // No suitable alternative found, provide child-friendly disambiguation message
+                    val disambiguationMessage = createDisambiguationMessage(searchTerm)
+                    return Triple(null, disambiguationMessage, null)
+                }
+            }
+            
+            // Regular page - proceed with normal processing
+            val extract = json.optString("extract")
+            val explanation = simplifyTextForToddlers(extract)
+
+            val bitmap = json.optJSONObject("thumbnail")?.getString("source")?.let {
+                val inputStream = URL(it).openStream()
+                BitmapFactory.decodeStream(inputStream)
+            }
+            
+            return Triple(bitmap, explanation, null)
+        }
+
+        private fun extractDisambiguationAlternative(json: JSONObject): String? {
+            try {
+                val extract = json.optString("extract")
+                if (extract.isNullOrEmpty()) return null
+                
+                // Look for common disambiguation patterns and extract the first suitable link
+                val lines = extract.split("\n")
+                
+                // First, try to find child-friendly topics based on keywords
+                val childFriendlyKeywords = listOf(
+                    "animal", "fruit", "food", "toy", "plant", "color", "flower", 
+                    "bird", "fish", "insect", "tree", "game", "book", "movie"
+                )
+                
+                for (line in lines) {
+                    if (line.trim().isEmpty() || 
+                        line.contains("may refer to", ignoreCase = true) || 
+                        line.contains("disambiguation", ignoreCase = true) ||
+                        line.startsWith("See also") || 
+                        line.startsWith("Notes")) {
+                        continue
+                    }
+                    
+                    val cleanLine = line.trim().removeSuffix(".").removeSuffix(",")
+                    
+                    // Check if line contains child-friendly content
+                    for (keyword in childFriendlyKeywords) {
+                        if (cleanLine.contains(keyword, ignoreCase = true)) {
+                            val title = extractTitleFromLine(cleanLine)
+                            if (title != null) {
+                                Log.d(TAG, "Found child-friendly alternative: $title")
+                                return title
+                            }
+                        }
+                    }
+                }
+                
+                // If no child-friendly topic found, try the first reasonable entry
+                for (line in lines) {
+                    if (line.trim().isEmpty() || 
+                        line.contains("may refer to", ignoreCase = true) || 
+                        line.contains("disambiguation", ignoreCase = true) ||
+                        line.startsWith("See also") || 
+                        line.startsWith("Notes")) {
+                        continue
+                    }
+                    
+                    val title = extractTitleFromLine(line.trim())
+                    if (title != null) {
+                        Log.d(TAG, "Found general alternative: $title")
+                        return title
+                    }
+                }
+                
+                return null
+            } catch (e: Exception) {
+                Log.e(TAG, "Error extracting disambiguation alternative", e)
+                return null
+            }
+        }
+
+        private fun extractTitleFromLine(line: String): String? {
+            if (line.length < 3) return null
+            
+            // Remove common patterns and extract the main title
+            var cleanLine = line.removeSuffix(".").removeSuffix(",")
+            
+            // Handle patterns like "Title, description" or "Title (year)" or "Title - description"
+            val patterns = listOf(",", "(", " -", " –", " —")
+            for (pattern in patterns) {
+                val index = cleanLine.indexOf(pattern)
+                if (index > 2) {
+                    cleanLine = cleanLine.substring(0, index).trim()
+                    break
+                }
+            }
+            
+            // Skip if it contains disambiguation-related words or is too short
+            if (cleanLine.length < 3 || 
+                cleanLine.contains("disambiguation", ignoreCase = true) ||
+                cleanLine.contains("see also", ignoreCase = true) ||
+                cleanLine.contains("redirect", ignoreCase = true)) {
+                return null
+            }
+            
+            return cleanLine
+        }
+
+        private fun createDisambiguationMessage(searchTerm: String): String {
+            // Create different messages based on common ambiguous terms
+            return when (searchTerm.lowercase()) {
+                "apple" -> "Apple can mean the yummy red fruit you eat, or the computer company! Try asking 'what is red apple' or 'what is green apple'."
+                "mercury" -> "Mercury can mean a planet in space or something else! Try asking 'what is planet mercury' instead."
+                "java" -> "Java can mean different things! Try asking about something more specific, like an animal or food."
+                "mouse" -> "Mouse can mean the little animal that squeaks, or the computer mouse! Try asking 'what is small mouse' or 'what is pet mouse'."
+                "bat" -> "Bat can mean the flying animal or the stick for baseball! Try asking 'what is flying bat' or 'what is baseball bat'."
+                "bear" -> "There are many types of bears! Try asking 'what is brown bear' or 'what is teddy bear'."
+                "orange" -> "Orange can mean the yummy fruit or the bright color! Try asking 'what is orange fruit' or 'what is orange color'."
+                else -> "There are many different things called '$searchTerm'! Try asking about something more specific to help me understand what you want to know."
             }
         }
 
