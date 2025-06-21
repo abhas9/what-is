@@ -7,4 +7,11 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    
+    <!-- Ask Again Button Colors -->
+    <color name="button_gradient_start">#FFF57C00</color>
+    <color name="button_gradient_end">#FFFBC02D</color>
+    <color name="button_stroke">#FFE65100</color>
+    <color name="button_text">#FFFFFFFF</color>
+    <color name="button_text_shadow">#80000000</color>
 </resources>

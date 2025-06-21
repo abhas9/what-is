@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    
+    <!-- Gradient background from bright orange to sunny yellow -->
+    <gradient
+        android:startColor="@color/button_gradient_start"
+        android:endColor="@color/button_gradient_end"
+        android:angle="135"
+        android:type="linear" />
+    
+    <!-- Rounded corners for modern look -->
+    <corners android:radius="16dp" />
+    
+    <!-- Subtle stroke for definition -->
+    <stroke
+        android:width="2dp"
+        android:color="@color/button_stroke" />
+        
+    <!-- Padding for comfortable touch target -->
+    <padding
+        android:left="24dp"
+        android:top="12dp"
+        android:right="24dp"
+        android:bottom="12dp" />
+        
+</shape>
