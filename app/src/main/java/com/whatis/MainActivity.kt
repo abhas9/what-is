@@ -58,6 +58,8 @@ class MainActivity : Activity() {
             setShadowLayer(4f, 2f, 2f, ContextCompat.getColor(this@MainActivity, R.color.button_text_shadow))
             isAllCaps = false // More friendly appearance
             letterSpacing = 0.05f // Slight letter spacing for readability
+            minHeight = resources.getDimensionPixelSize(android.R.dimen.app_icon_size) // Ensure accessible touch target
+            contentDescription = "Ask again button - tap to record your voice and ask a question"
             setOnClickListener { startVoiceRecognition() }
         }
 
@@ -90,7 +92,9 @@ class MainActivity : Activity() {
             ViewGroup.LayoutParams.WRAP_CONTENT
         ).apply {
             gravity = Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
-            bottomMargin = 50
+            bottomMargin = 80 // Increased margin for better spacing with gradient button
+            leftMargin = 32
+            rightMargin = 32
         })
         layout.addView(errorText, FrameLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT,
