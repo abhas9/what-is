@@ -51,7 +51,7 @@ class MainActivity : Activity() {
 
         askButton = Button(this).apply {
             text = "Ask again"
-            textSize = 20f
+            textSize = 28f
             setBackgroundResource(R.drawable.ask_button_selector)
             setTextColor(ContextCompat.getColor(this@MainActivity, R.color.button_text))
             elevation = 8f
@@ -63,11 +63,7 @@ class MainActivity : Activity() {
             minHeight = resources.getDimensionPixelSize(android.R.dimen.app_icon_size) // Ensure accessible touch target
             contentDescription = "Ask again button - tap to record your voice and ask a question"
             setOnClickListener { 
-                if (suggestionsGrid.visibility == GridLayout.VISIBLE) {
-                    startVoiceRecognition()
-                } else {
-                    showSuggestionsGrid()
-                }
+                startVoiceRecognition()
             }
         }
 
@@ -79,7 +75,7 @@ class MainActivity : Activity() {
 
         listeningIndicator = TextView(this).apply {
             text = "Listening..."
-            textSize = 30f
+            textSize = 60f
             setTextColor(Color.parseColor("#4CAF50"))
             gravity = Gravity.CENTER
             visibility = TextView.GONE
