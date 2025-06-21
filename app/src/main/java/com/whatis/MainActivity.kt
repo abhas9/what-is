@@ -48,6 +48,9 @@ class MainActivity : Activity() {
 
         askButton = Button(this).apply {
             text = "Ask again"
+            textSize = 28f
+            setBackgroundColor(Color.parseColor("#FFEB3B"))
+            setTextColor(Color.parseColor("#000000"))
             setOnClickListener { startVoiceRecognition() }
         }
 
@@ -59,8 +62,8 @@ class MainActivity : Activity() {
 
         listeningIndicator = TextView(this).apply {
             text = "Listening..."
-            textSize = 18f
-            setTextColor(android.graphics.Color.GREEN)
+            textSize = 30f
+            setTextColor(Color.parseColor("#4CAF50"))
             gravity = Gravity.CENTER
             visibility = TextView.GONE
         }
