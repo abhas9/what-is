@@ -97,6 +97,7 @@ class MainActivity : Activity() {
         logoImageView = ImageView(this).apply {
             setImageResource(R.drawable.app_logo)
             scaleType = ImageView.ScaleType.FIT_CENTER
+            adjustViewBounds = true
             contentDescription = "What Is app logo"
             importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_YES
             visibility = ImageView.GONE // Initially hidden, shown with suggestions grid
@@ -200,6 +201,24 @@ class MainActivity : Activity() {
         })
 
         setContentView(layout)
+
+        // Set up dynamic width constraint for logo (60% of available width)
+        layout.viewTreeObserver.addOnGlobalLayoutListener(object : android.view.ViewTreeObserver.OnGlobalLayoutListener {
+            override fun onGlobalLayout() {
+                layout.viewTreeObserver.removeOnGlobalLayoutListener(this)
+                
+                // Calculate 60% of the FrameLayout width minus margins
+                val layoutWidth = layout.width
+                val density = resources.displayMetrics.density
+                val leftMarginPx = (32 * density).toInt()
+                val rightMarginPx = (32 * density).toInt()
+                val availableWidth = layoutWidth - leftMarginPx - rightMarginPx
+                val maxLogoWidth = (availableWidth * 0.6).toInt()
+                
+                // Apply the maximum width constraint to the logo
+                logoImageView.maxWidth = maxLogoWidth
+            }
+        })
 
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
             != PackageManager.PERMISSION_GRANTED
