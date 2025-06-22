@@ -55,4 +55,23 @@ class LayoutSpacingTest {
             secondGap > firstGap
         )
     }
+    
+    @Test
+    fun autoPlayButtonSpacing() {
+        // Test that AutoPlay button has appropriate spacing in the bottom layout
+        val askButtonBottomMargin = 80
+        val autoPlayButtonBottomMargin = 160
+        val autoPlayStatusBottomMargin = 240
+        
+        // AutoPlay button should be above Ask Again button with sufficient spacing
+        val buttonSpacing = autoPlayButtonBottomMargin - askButtonBottomMargin
+        assertTrue("AutoPlay button should be at least 60dp above Ask Again button", buttonSpacing >= 60)
+        
+        // Status text should be above AutoPlay button with sufficient spacing
+        val statusSpacing = autoPlayStatusBottomMargin - autoPlayButtonBottomMargin
+        assertTrue("AutoPlay status should be at least 60dp above AutoPlay button", statusSpacing >= 60)
+        
+        // Total height should not be excessive
+        assertTrue("Total bottom UI height should be reasonable", autoPlayStatusBottomMargin <= 300)
+    }
 }

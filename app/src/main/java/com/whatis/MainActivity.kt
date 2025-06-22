@@ -9,6 +9,8 @@ import android.graphics.BitmapFactory
 import android.os.AsyncTask
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.graphics.Color
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
@@ -41,6 +43,14 @@ class MainActivity : Activity() {
     private lateinit var listeningIndicator: TextView
     private lateinit var suggestionsGrid: GridLayout
     private lateinit var logoImageView: ImageView
+    
+    // AutoPlay components
+    private lateinit var autoPlayButton: Button
+    private lateinit var autoPlayStatusText: TextView
+    private val autoPlayHandler = Handler(Looper.getMainLooper())
+    private var isAutoPlayActive = false
+    private val autoPlayUsedItems = mutableSetOf<String>()
+    private var autoPlayRunnable: Runnable? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -92,6 +102,34 @@ class MainActivity : Activity() {
             visibility = ImageView.GONE // Initially hidden, shown with suggestions grid
         }
 
+        // AutoPlay button
+        autoPlayButton = Button(this).apply {
+            text = "Start AutoPlay"
+            textSize = 20f
+            setBackgroundResource(R.drawable.ask_button_selector)
+            setTextColor(ContextCompat.getColor(this@MainActivity, R.color.button_text))
+            elevation = 8f
+            stateListAnimator = null
+            typeface = android.graphics.Typeface.DEFAULT_BOLD
+            setShadowLayer(4f, 2f, 2f, ContextCompat.getColor(this@MainActivity, R.color.button_text_shadow))
+            isAllCaps = false
+            letterSpacing = 0.05f
+            minHeight = resources.getDimensionPixelSize(android.R.dimen.app_icon_size)
+            contentDescription = "AutoPlay button - tap to start or stop automatic cycling through items"
+            setOnClickListener { 
+                toggleAutoPlay()
+            }
+        }
+
+        // AutoPlay status text
+        autoPlayStatusText = TextView(this).apply {
+            text = ""
+            textSize = 16f
+            setTextColor(Color.parseColor("#FF6B6B"))
+            gravity = Gravity.CENTER
+            visibility = TextView.GONE
+        }
+
         layout.addView(imageView, FrameLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT,
             ViewGroup.LayoutParams.MATCH_PARENT
@@ -110,6 +148,22 @@ class MainActivity : Activity() {
             bottomMargin = 80 // Increased margin for better spacing with gradient button
             leftMargin = 32
             rightMargin = 32
+        })
+        layout.addView(autoPlayButton, FrameLayout.LayoutParams(
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT
+        ).apply {
+            gravity = Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
+            bottomMargin = 160 // Position above the Ask Again button
+            leftMargin = 32
+            rightMargin = 32
+        })
+        layout.addView(autoPlayStatusText, FrameLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT
+        ).apply {
+            gravity = Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
+            bottomMargin = 240 // Position above the AutoPlay button
         })
         layout.addView(errorText, FrameLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT,
@@ -348,6 +402,101 @@ class MainActivity : Activity() {
         tts.speak(answer, TextToSpeech.QUEUE_FLUSH, null, null)
     }
 
+    private fun toggleAutoPlay() {
+        if (isAutoPlayActive) {
+            stopAutoPlay()
+        } else {
+            startAutoPlay()
+        }
+    }
+
+    private fun startAutoPlay() {
+        isAutoPlayActive = true
+        autoPlayButton.text = "Stop AutoPlay"
+        autoPlayStatusText.text = "AutoPlay Active - Cycling through items..."
+        autoPlayStatusText.visibility = TextView.VISIBLE
+        
+        // Disable other UI interactions
+        askButton.isEnabled = false
+        disableSuggestionButtons()
+        
+        hideSuggestionsGrid()
+        scheduleNextAutoPlayItem()
+    }
+
+    private fun stopAutoPlay() {
+        isAutoPlayActive = false
+        autoPlayButton.text = "Start AutoPlay"
+        autoPlayStatusText.visibility = TextView.GONE
+        
+        // Re-enable UI interactions
+        askButton.isEnabled = true
+        enableSuggestionButtons()
+        
+        // Cancel scheduled autoplay
+        autoPlayRunnable?.let { autoPlayHandler.removeCallbacks(it) }
+        autoPlayRunnable = null
+        
+        showSuggestionsGrid()
+    }
+
+    private fun scheduleNextAutoPlayItem() {
+        if (!isAutoPlayActive) return
+        
+        autoPlayRunnable = Runnable {
+            if (isAutoPlayActive) {
+                playNextAutoPlayItem()
+            }
+        }
+        autoPlayHandler.postDelayed(autoPlayRunnable!!, 2000) // 2 second delay
+    }
+
+    private fun playNextAutoPlayItem() {
+        if (!isAutoPlayActive) return
+        
+        val availableItems = LocalAnswerStore.answers.keys.toList()
+        val unusedItems = availableItems.filter { !autoPlayUsedItems.contains(it) }
+        
+        if (unusedItems.isEmpty()) {
+            // Reset memory when all items are exhausted
+            autoPlayUsedItems.clear()
+            playNextAutoPlayItem()
+            return
+        }
+        
+        // Pick random item from unused items
+        val randomItem = unusedItems.random()
+        autoPlayUsedItems.add(randomItem)
+        
+        // Update status text to show current item
+        autoPlayStatusText.text = "AutoPlay: $randomItem (${autoPlayUsedItems.size}/${availableItems.size})"
+        
+        handleQuestion("what is $randomItem")
+        
+        // Schedule next item
+        scheduleNextAutoPlayItem()
+    }
+
+    private fun disableSuggestionButtons() {
+        for (i in 0 until suggestionsGrid.childCount) {
+            val child = suggestionsGrid.getChildAt(i)
+            if (child is Button) {
+                child.isEnabled = false
+                child.alpha = 0.5f
+            }
+        }
+    }
+
+    private fun enableSuggestionButtons() {
+        for (i in 0 until suggestionsGrid.childCount) {
+            val child = suggestionsGrid.getChildAt(i)
+            if (child is Button) {
+                child.isEnabled = true
+                child.alpha = 1.0f
+            }
+        }
+    }
+
     private inner class FetchImageTask(val keyword: String, val answer: String) : AsyncTask<Void, Void, Pair<Bitmap?, String?>>() {
         override fun onPreExecute() {
             progressBar.visibility = ProgressBar.VISIBLE
@@ -432,7 +581,17 @@ class MainActivity : Activity() {
         return BitmapFactory.decodeResource(resources, android.R.drawable.ic_menu_help)
     }
 
+    override fun onPause() {
+        super.onPause()
+        if (isAutoPlayActive) {
+            stopAutoPlay()
+        }
+    }
+
     override fun onDestroy() {
+        if (isAutoPlayActive) {
+            stopAutoPlay()
+        }
         if (::tts.isInitialized) {
             tts.stop()
             tts.shutdown()
