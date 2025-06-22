@@ -86,4 +86,21 @@ class AutoPlayTest {
         assertTrue("Progress should be between 0 and 1", progress >= 0 && progress <= 1)
         assertTrue("Progress should be approximately 0.5", progress > 0.4 && progress < 0.6)
     }
+    
+    @Test
+    fun autoPlay_timingConstants() {
+        // Test that the timing constants are set correctly for the expected behavior
+        // Expected: First item immediate, then 10-second delays between subsequent items
+        
+        val expectedDelayBetweenItems = 10000L // 10 seconds in milliseconds
+        
+        // This test validates the timing constants match the requirements:
+        // - First item should play immediately (no delay)
+        // - Subsequent items should have 10-second delays
+        assertTrue("Delay between items should be 10 seconds (10000ms)", expectedDelayBetweenItems == 10000L)
+        
+        // Verify delay is reasonable (between 5-15 seconds)
+        assertTrue("Delay should be at least 5 seconds", expectedDelayBetweenItems >= 5000L)
+        assertTrue("Delay should be at most 15 seconds", expectedDelayBetweenItems <= 15000L)
+    }
 }

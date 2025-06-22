@@ -421,7 +421,7 @@ class MainActivity : Activity() {
         disableSuggestionButtons()
         
         hideSuggestionsGrid()
-        scheduleNextAutoPlayItem()
+        playNextAutoPlayItem() // Start first item immediately
     }
 
     private fun stopAutoPlay() {
@@ -448,7 +448,7 @@ class MainActivity : Activity() {
                 playNextAutoPlayItem()
             }
         }
-        autoPlayHandler.postDelayed(autoPlayRunnable!!, 15000) // 15 second delay
+        autoPlayHandler.postDelayed(autoPlayRunnable!!, 10000) // 10 second delay
     }
 
     private fun playNextAutoPlayItem() {
