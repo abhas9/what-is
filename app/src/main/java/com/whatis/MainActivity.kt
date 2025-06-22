@@ -130,7 +130,7 @@ class MainActivity : Activity() {
             ViewGroup.LayoutParams.WRAP_CONTENT
         ).apply {
             gravity = Gravity.CENTER_HORIZONTAL or Gravity.TOP
-            topMargin = 150 // Position below listeningIndicator and above suggestions
+            topMargin = 180 // Increased from 150 to better center between listeningIndicator and suggestions
             leftMargin = 32
             rightMargin = 32
         })
@@ -139,7 +139,7 @@ class MainActivity : Activity() {
             ViewGroup.LayoutParams.WRAP_CONTENT
         ).apply {
             gravity = Gravity.CENTER_HORIZONTAL or Gravity.TOP
-            topMargin = 230 // Position below logo
+            topMargin = 300 // Increased from 230 to provide more space below logo
             leftMargin = 32
             rightMargin = 32
             bottomMargin = 160 // Maintain space above the "Ask Again" button
