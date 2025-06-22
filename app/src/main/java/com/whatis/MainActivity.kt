@@ -9,6 +9,8 @@ import android.graphics.BitmapFactory
 import android.os.AsyncTask
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.graphics.Color
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
@@ -37,10 +39,18 @@ class MainActivity : Activity() {
     private lateinit var imageView: ImageView
     private lateinit var progressBar: ProgressBar
     private lateinit var askButton: Button
+    private lateinit var autoPlayButton: Button
     private lateinit var errorText: TextView
     private lateinit var listeningIndicator: TextView
     private lateinit var suggestionsGrid: GridLayout
     private lateinit var logoImageView: ImageView
+
+    // AutoPlay state management
+    private var isAutoPlaying = false
+    private var autoPlayHandler = Handler(Looper.getMainLooper())
+    private var autoPlayRunnable: Runnable? = null
+    private var availableItems = mutableListOf<String>()
+    private var usedItems = mutableSetOf<String>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -64,7 +74,27 @@ class MainActivity : Activity() {
             minHeight = resources.getDimensionPixelSize(android.R.dimen.app_icon_size) // Ensure accessible touch target
             contentDescription = "Ask again button - tap to record your voice and ask a question"
             setOnClickListener { 
-                startVoiceRecognition()
+                if (!isAutoPlaying) {
+                    startVoiceRecognition()
+                }
+            }
+        }
+
+        autoPlayButton = Button(this).apply {
+            text = "AutoPlay"
+            textSize = 24f
+            setBackgroundResource(R.drawable.ask_button_selector)
+            setTextColor(ContextCompat.getColor(this@MainActivity, R.color.button_text))
+            elevation = 8f
+            stateListAnimator = null
+            typeface = android.graphics.Typeface.DEFAULT_BOLD
+            setShadowLayer(4f, 2f, 2f, ContextCompat.getColor(this@MainActivity, R.color.button_text_shadow))
+            isAllCaps = false
+            letterSpacing = 0.05f
+            minHeight = resources.getDimensionPixelSize(android.R.dimen.app_icon_size)
+            contentDescription = "AutoPlay button - tap to automatically play through all items"
+            setOnClickListener { 
+                toggleAutoPlay()
             }
         }
 
@@ -106,9 +136,18 @@ class MainActivity : Activity() {
             ViewGroup.LayoutParams.WRAP_CONTENT,
             ViewGroup.LayoutParams.WRAP_CONTENT
         ).apply {
-            gravity = Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
-            bottomMargin = 80 // Increased margin for better spacing with gradient button
+            gravity = Gravity.BOTTOM or Gravity.START
+            bottomMargin = 80
             leftMargin = 32
+            rightMargin = 16
+        })
+        layout.addView(autoPlayButton, FrameLayout.LayoutParams(
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT
+        ).apply {
+            gravity = Gravity.BOTTOM or Gravity.END
+            bottomMargin = 80
+            leftMargin = 16
             rightMargin = 32
         })
         layout.addView(errorText, FrameLayout.LayoutParams(
@@ -238,8 +277,10 @@ class MainActivity : Activity() {
     }
 
     private fun handleSuggestionClick(item: String) {
-        hideSuggestionsGrid()
-        handleQuestion("what is $item")
+        if (!isAutoPlaying) {
+            hideSuggestionsGrid()
+            handleQuestion("what is $item")
+        }
     }
 
     private fun showSuggestionsGrid() {
@@ -250,6 +291,77 @@ class MainActivity : Activity() {
     private fun hideSuggestionsGrid() {
         suggestionsGrid.visibility = GridLayout.GONE
         logoImageView.visibility = ImageView.GONE
+    }
+
+    private fun toggleAutoPlay() {
+        if (isAutoPlaying) {
+            stopAutoPlay()
+        } else {
+            startAutoPlay()
+        }
+    }
+
+    private fun startAutoPlay() {
+        isAutoPlaying = true
+        autoPlayButton.text = "Stop AutoPlay"
+        hideSuggestionsGrid()
+        
+        // Initialize available items if empty or if all items have been used
+        if (availableItems.isEmpty() || usedItems.size >= LocalAnswerStore.answers.size) {
+            resetAutoPlayCycle()
+        }
+        
+        scheduleNextAutoPlayItem()
+    }
+
+    private fun stopAutoPlay() {
+        isAutoPlaying = false
+        autoPlayButton.text = "AutoPlay"
+        
+        // Cancel any pending autoplay
+        autoPlayRunnable?.let { autoPlayHandler.removeCallbacks(it) }
+        autoPlayRunnable = null
+        
+        showSuggestionsGrid()
+    }
+
+    private fun resetAutoPlayCycle() {
+        // Create a new shuffled list of all items from LocalAnswerStore
+        availableItems = LocalAnswerStore.answers.keys.toMutableList()
+        availableItems.shuffle()
+        usedItems.clear()
+    }
+
+    private fun scheduleNextAutoPlayItem() {
+        if (!isAutoPlaying) return
+        
+        // If all items have been used, reset the cycle
+        if (availableItems.isEmpty() || usedItems.size >= LocalAnswerStore.answers.size) {
+            resetAutoPlayCycle()
+        }
+        
+        // Find next unused item
+        val nextItem = availableItems.firstOrNull { !usedItems.contains(it) }
+        
+        if (nextItem != null) {
+            usedItems.add(nextItem)
+            
+            autoPlayRunnable = Runnable {
+                if (isAutoPlaying) {
+                    handleQuestion("what is $nextItem")
+                    // Schedule next item after 2 seconds
+                    autoPlayHandler.postDelayed({
+                        scheduleNextAutoPlayItem()
+                    }, 2000)
+                }
+            }
+            
+            autoPlayRunnable?.let { autoPlayHandler.post(it) }
+        } else {
+            // This shouldn't happen, but as a safety fallback
+            resetAutoPlayCycle()
+            scheduleNextAutoPlayItem()
+        }
     }
 
     override fun onRequestPermissionsResult(
@@ -319,6 +431,8 @@ class MainActivity : Activity() {
     }
 
     private fun startVoiceRecognition() {
+        if (isAutoPlaying) return
+        
         errorText.text = ""
         hideSuggestionsGrid()
         val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
@@ -433,6 +547,7 @@ class MainActivity : Activity() {
     }
 
     override fun onDestroy() {
+        stopAutoPlay()
         if (::tts.isInitialized) {
             tts.stop()
             tts.shutdown()
