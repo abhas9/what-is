@@ -154,7 +154,7 @@ class MainActivity : Activity() {
             ViewGroup.LayoutParams.WRAP_CONTENT
         ).apply {
             gravity = Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
-            bottomMargin = 160 // Position above the Ask Again button
+            bottomMargin = 240 // Position above the Ask Again button
             leftMargin = 32
             rightMargin = 32
         })
@@ -163,7 +163,7 @@ class MainActivity : Activity() {
             ViewGroup.LayoutParams.WRAP_CONTENT
         ).apply {
             gravity = Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
-            bottomMargin = 240 // Position above the AutoPlay button
+            bottomMargin = 320 // Position above the AutoPlay button
         })
         layout.addView(errorText, FrameLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT,
@@ -184,7 +184,7 @@ class MainActivity : Activity() {
             ViewGroup.LayoutParams.WRAP_CONTENT
         ).apply {
             gravity = Gravity.CENTER_HORIZONTAL or Gravity.TOP
-            topMargin = 180 // Increased from 150 to better center between listeningIndicator and suggestions
+            topMargin = 220 // Increased from 150 to better center between listeningIndicator and suggestions
             leftMargin = 32
             rightMargin = 32
         })
@@ -193,7 +193,7 @@ class MainActivity : Activity() {
             ViewGroup.LayoutParams.WRAP_CONTENT
         ).apply {
             gravity = Gravity.CENTER_HORIZONTAL or Gravity.TOP
-            topMargin = 300 // Increased from 230 to provide more space below logo
+            topMargin = 250
             leftMargin = 32
             rightMargin = 32
             bottomMargin = 160 // Maintain space above the "Ask Again" button
@@ -448,7 +448,7 @@ class MainActivity : Activity() {
                 playNextAutoPlayItem()
             }
         }
-        autoPlayHandler.postDelayed(autoPlayRunnable!!, 2000) // 2 second delay
+        autoPlayHandler.postDelayed(autoPlayRunnable!!, 15000) // 15 second delay
     }
 
     private fun playNextAutoPlayItem() {
