@@ -302,6 +302,12 @@ class MainActivity : Activity() {
     }
 
     private fun startAutoPlay() {
+        // Don't start if TTS is not ready
+        if (!::tts.isInitialized) {
+            Toast.makeText(this, "Text-to-speech not ready", Toast.LENGTH_SHORT).show()
+            return
+        }
+        
         isAutoPlaying = true
         autoPlayButton.text = "Stop AutoPlay"
         hideSuggestionsGrid()
@@ -321,6 +327,11 @@ class MainActivity : Activity() {
         // Cancel any pending autoplay
         autoPlayRunnable?.let { autoPlayHandler.removeCallbacks(it) }
         autoPlayRunnable = null
+        
+        // Stop TTS if speaking
+        if (::tts.isInitialized && tts.isSpeaking) {
+            tts.stop()
+        }
         
         showSuggestionsGrid()
     }
@@ -544,6 +555,14 @@ class MainActivity : Activity() {
 
     private fun getDefaultBitmap(): Bitmap? {
         return BitmapFactory.decodeResource(resources, android.R.drawable.ic_menu_help)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        // Stop autoplay when app goes to background
+        if (isAutoPlaying) {
+            stopAutoPlay()
+        }
     }
 
     override fun onDestroy() {
