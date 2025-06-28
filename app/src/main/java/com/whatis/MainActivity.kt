@@ -23,6 +23,7 @@ import android.view.ViewGroup
 import android.widget.*
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import com.whatis.BuildConfig
 import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL

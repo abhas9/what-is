@@ -8,6 +8,7 @@ import android.os.Looper
 import android.util.Log
 import android.widget.ScrollView
 import android.widget.TextView
+import com.whatis.BuildConfig
 import java.io.PrintWriter
 import java.io.StringWriter
 import java.lang.ref.WeakReference
