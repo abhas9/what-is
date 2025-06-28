@@ -56,6 +56,9 @@ class MainActivity : Activity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        // Register this activity with the Application for crash handler context
+        WhatIsApplication.setCurrentActivity(this)
+
         // Initialize UI components from XML layout
         imageView = findViewById(R.id.imageView)
         progressBar = findViewById(R.id.progressBar)
@@ -97,6 +100,14 @@ class MainActivity : Activity() {
                 logoImageView.maxWidth = maxLogoWidth
             }
         })
+
+        // Add debug crash testing (long press on logo in debug builds)
+        if (BuildConfig.DEBUG) {
+            logoImageView.setOnLongClickListener {
+                testCrashHandler()
+                true
+            }
+        }
 
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
             != PackageManager.PERMISSION_GRANTED
@@ -476,6 +487,12 @@ class MainActivity : Activity() {
         return BitmapFactory.decodeResource(resources, android.R.drawable.ic_menu_help)
     }
 
+    override fun onResume() {
+        super.onResume()
+        // Re-register the activity when resuming
+        WhatIsApplication.setCurrentActivity(this)
+    }
+
     override fun onPause() {
         super.onPause()
         if (isAutoPlayActive) {
@@ -495,5 +512,19 @@ class MainActivity : Activity() {
             speechRecognizer.destroy()
         }
         super.onDestroy()
+    }
+    
+    /**
+     * Test method to trigger a crash and verify the exception handler works.
+     * Only available in debug builds via long press on logo.
+     */
+    private fun testCrashHandler() {
+        Toast.makeText(this, "Testing crash handler... (DEBUG only)", Toast.LENGTH_SHORT).show()
+        
+        // Simulate different types of crashes
+        Handler(Looper.getMainLooper()).postDelayed({
+            // This will trigger a RuntimeException
+            throw RuntimeException("Debug test crash: This is a test exception to verify the crash handler works correctly. The app should show a detailed crash dialog.")
+        }, 1000)
     }
 }
