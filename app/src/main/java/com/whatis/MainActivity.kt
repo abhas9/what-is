@@ -54,161 +54,39 @@ class MainActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
 
-        val layout = FrameLayout(this)
-        imageView = ImageView(this)
-        progressBar = ProgressBar(this)
-        progressBar.visibility = ProgressBar.GONE
+        // Initialize UI components from XML layout
+        imageView = findViewById(R.id.imageView)
+        progressBar = findViewById(R.id.progressBar)
+        askButton = findViewById(R.id.askButton)
+        errorText = findViewById(R.id.errorText)
+        listeningIndicator = findViewById(R.id.listeningIndicator)
+        logoImageView = findViewById(R.id.logoImageView)
+        autoPlayButton = findViewById(R.id.autoPlayButton)
+        autoPlayStatusText = findViewById(R.id.autoPlayStatusText)
+        suggestionsGrid = findViewById(R.id.suggestionsGrid)
 
-        askButton = Button(this).apply {
-            text = "Ask again"
-            textSize = 28f
-            setBackgroundResource(R.drawable.ask_button_selector)
-            setTextColor(ContextCompat.getColor(this@MainActivity, R.color.button_text))
-            elevation = 8f
-            stateListAnimator = null // Remove default state animator to use custom elevation
-            typeface = android.graphics.Typeface.DEFAULT_BOLD
-            setShadowLayer(4f, 2f, 2f, ContextCompat.getColor(this@MainActivity, R.color.button_text_shadow))
-            isAllCaps = false // More friendly appearance
-            letterSpacing = 0.05f // Slight letter spacing for readability
-            minHeight = resources.getDimensionPixelSize(android.R.dimen.app_icon_size) // Ensure accessible touch target
-            contentDescription = "Ask again button - tap to record your voice and ask a question"
-            setOnClickListener { 
-                startVoiceRecognition()
-            }
+        // Set up button click listeners
+        askButton.setOnClickListener { 
+            startVoiceRecognition()
+        }
+        
+        autoPlayButton.setOnClickListener { 
+            toggleAutoPlay()
         }
 
-        errorText = TextView(this).apply {
-            textSize = 14f
-            setTextColor(android.graphics.Color.RED)
-            gravity = Gravity.CENTER
-        }
-
-        listeningIndicator = TextView(this).apply {
-            text = "Listening..."
-            textSize = 60f
-            setTextColor(Color.parseColor("#4CAF50"))
-            gravity = Gravity.CENTER
-            visibility = TextView.GONE
-        }
-
+        // Create suggestion buttons programmatically
         createSuggestionsGrid()
 
-        logoImageView = ImageView(this).apply {
-            setImageResource(R.drawable.app_logo)
-            scaleType = ImageView.ScaleType.FIT_CENTER
-            adjustViewBounds = true
-            contentDescription = "What Is app logo"
-            importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_YES
-            visibility = ImageView.GONE // Initially hidden, shown with suggestions grid
-        }
-
-        // AutoPlay button
-        autoPlayButton = Button(this).apply {
-            text = "Start AutoPlay"
-            textSize = 20f
-            setBackgroundResource(R.drawable.ask_button_selector)
-            setTextColor(ContextCompat.getColor(this@MainActivity, R.color.button_text))
-            elevation = 8f
-            stateListAnimator = null
-            typeface = android.graphics.Typeface.DEFAULT_BOLD
-            setShadowLayer(4f, 2f, 2f, ContextCompat.getColor(this@MainActivity, R.color.button_text_shadow))
-            isAllCaps = false
-            letterSpacing = 0.05f
-            minHeight = resources.getDimensionPixelSize(android.R.dimen.app_icon_size)
-            contentDescription = "AutoPlay button - tap to start or stop automatic cycling through items"
-            setOnClickListener { 
-                toggleAutoPlay()
-            }
-        }
-
-        // AutoPlay status text
-        autoPlayStatusText = TextView(this).apply {
-            text = ""
-            textSize = 16f
-            setTextColor(Color.parseColor("#FF6B6B"))
-            gravity = Gravity.CENTER
-            visibility = TextView.GONE
-        }
-
-        layout.addView(imageView, FrameLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT,
-            ViewGroup.LayoutParams.MATCH_PARENT
-        ))
-        layout.addView(progressBar, FrameLayout.LayoutParams(
-            ViewGroup.LayoutParams.WRAP_CONTENT,
-            ViewGroup.LayoutParams.WRAP_CONTENT
-        ).apply {
-            gravity = Gravity.CENTER
-        })
-        layout.addView(askButton, FrameLayout.LayoutParams(
-            ViewGroup.LayoutParams.WRAP_CONTENT,
-            ViewGroup.LayoutParams.WRAP_CONTENT
-        ).apply {
-            gravity = Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
-            bottomMargin = 80 // Increased margin for better spacing with gradient button
-            leftMargin = 32
-            rightMargin = 32
-        })
-        layout.addView(autoPlayButton, FrameLayout.LayoutParams(
-            ViewGroup.LayoutParams.WRAP_CONTENT,
-            ViewGroup.LayoutParams.WRAP_CONTENT
-        ).apply {
-            gravity = Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
-            bottomMargin = 240 // Position above the Ask Again button
-            leftMargin = 32
-            rightMargin = 32
-        })
-        layout.addView(autoPlayStatusText, FrameLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT,
-            ViewGroup.LayoutParams.WRAP_CONTENT
-        ).apply {
-            gravity = Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
-            bottomMargin = 320 // Position above the AutoPlay button
-        })
-        layout.addView(errorText, FrameLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT,
-            ViewGroup.LayoutParams.WRAP_CONTENT
-        ).apply {
-            gravity = Gravity.TOP
-            topMargin = 50
-        })
-        layout.addView(listeningIndicator, FrameLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT,
-            ViewGroup.LayoutParams.WRAP_CONTENT
-        ).apply {
-            gravity = Gravity.CENTER_HORIZONTAL or Gravity.TOP
-            topMargin = 100
-        })
-        layout.addView(logoImageView, FrameLayout.LayoutParams(
-            ViewGroup.LayoutParams.WRAP_CONTENT,
-            ViewGroup.LayoutParams.WRAP_CONTENT
-        ).apply {
-            gravity = Gravity.CENTER_HORIZONTAL or Gravity.TOP
-            topMargin = 220 // Increased from 150 to better center between listeningIndicator and suggestions
-            leftMargin = 32
-            rightMargin = 32
-        })
-        layout.addView(suggestionsGrid, FrameLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT,
-            ViewGroup.LayoutParams.WRAP_CONTENT
-        ).apply {
-            gravity = Gravity.CENTER_HORIZONTAL or Gravity.TOP
-            topMargin = 250
-            leftMargin = 32
-            rightMargin = 32
-            bottomMargin = 160 // Maintain space above the "Ask Again" button
-        })
-
-        setContentView(layout)
-
         // Set up dynamic width constraint for logo (60% of available width)
-        layout.viewTreeObserver.addOnGlobalLayoutListener(object : android.view.ViewTreeObserver.OnGlobalLayoutListener {
+        val rootLayout = findViewById<androidx.constraintlayout.widget.ConstraintLayout>(R.id.rootLayout)
+        rootLayout.viewTreeObserver.addOnGlobalLayoutListener(object : android.view.ViewTreeObserver.OnGlobalLayoutListener {
             override fun onGlobalLayout() {
-                layout.viewTreeObserver.removeOnGlobalLayoutListener(this)
+                rootLayout.viewTreeObserver.removeOnGlobalLayoutListener(this)
                 
-                // Calculate 60% of the FrameLayout width minus margins
-                val layoutWidth = layout.width
+                // Calculate 60% of the root layout width minus margins
+                val layoutWidth = rootLayout.width
                 val density = resources.displayMetrics.density
                 val leftMarginPx = (32 * density).toInt()
                 val rightMarginPx = (32 * density).toInt()
@@ -234,79 +112,77 @@ class MainActivity : Activity() {
     }
 
     private fun createSuggestionsGrid() {
-        suggestionsGrid = GridLayout(this).apply {
-            columnCount = 3
-            rowCount = 4
+        // Clear any existing children
+        suggestionsGrid.removeAllViews()
+        
+        // Popular items from LocalAnswerStore that children would find interesting
+        val suggestions = listOf(
+            "dog", "cat", "car", "airplane", "apple", "ball", 
+            "bird", "flower", "fish", "train", "cookie", "book"
+        )
+        
+        // Colorful drawable resources with corresponding text colors
+        val colorVariants = listOf(
+            Pair(R.drawable.suggestion_button_blue, ContextCompat.getColor(this@MainActivity, R.color.suggestion_text_white)),
+            Pair(R.drawable.suggestion_button_green, ContextCompat.getColor(this@MainActivity, R.color.suggestion_text_white)),
+            Pair(R.drawable.suggestion_button_yellow, ContextCompat.getColor(this@MainActivity, R.color.suggestion_text_dark)),
+            Pair(R.drawable.suggestion_button_orange, ContextCompat.getColor(this@MainActivity, R.color.suggestion_text_white)),
+            Pair(R.drawable.suggestion_button_purple, ContextCompat.getColor(this@MainActivity, R.color.suggestion_text_white)),
+            Pair(R.drawable.suggestion_button_pink, ContextCompat.getColor(this@MainActivity, R.color.suggestion_text_white)),
+            Pair(R.drawable.suggestion_button_teal, ContextCompat.getColor(this@MainActivity, R.color.suggestion_text_white)),
+            Pair(R.drawable.suggestion_button_red, ContextCompat.getColor(this@MainActivity, R.color.suggestion_text_white))
+        )
+        
+        // Content description string resource IDs
+        val contentDescriptions = listOf(
+            R.string.suggestion_button_dog, R.string.suggestion_button_cat, R.string.suggestion_button_car,
+            R.string.suggestion_button_airplane, R.string.suggestion_button_apple, R.string.suggestion_button_ball,
+            R.string.suggestion_button_bird, R.string.suggestion_button_flower, R.string.suggestion_button_fish,
+            R.string.suggestion_button_train, R.string.suggestion_button_cookie, R.string.suggestion_button_book
+        )
+        
+        // Shuffle color variants to ensure random assignment but avoid adjacent duplicates
+        val shuffledColors = colorVariants.shuffled()
+        
+        suggestions.forEachIndexed { index, item ->
+            // Use modulo to cycle through colors if we have more suggestions than colors
+            val colorIndex = index % shuffledColors.size
+            val (backgroundDrawable, textColor) = shuffledColors[colorIndex]
             
-            // Popular items from LocalAnswerStore that children would find interesting
-            val suggestions = listOf(
-                "dog", "cat", "car", "airplane", "apple", "ball", 
-                "bird", "flower", "fish", "train", "cookie", "book"
-            )
-            
-            // Colorful drawable resources with corresponding text colors
-            val colorVariants = listOf(
-                Pair(R.drawable.suggestion_button_blue, ContextCompat.getColor(this@MainActivity, R.color.suggestion_text_white)),
-                Pair(R.drawable.suggestion_button_green, ContextCompat.getColor(this@MainActivity, R.color.suggestion_text_white)),
-                Pair(R.drawable.suggestion_button_yellow, ContextCompat.getColor(this@MainActivity, R.color.suggestion_text_dark)),
-                Pair(R.drawable.suggestion_button_orange, ContextCompat.getColor(this@MainActivity, R.color.suggestion_text_white)),
-                Pair(R.drawable.suggestion_button_purple, ContextCompat.getColor(this@MainActivity, R.color.suggestion_text_white)),
-                Pair(R.drawable.suggestion_button_pink, ContextCompat.getColor(this@MainActivity, R.color.suggestion_text_white)),
-                Pair(R.drawable.suggestion_button_teal, ContextCompat.getColor(this@MainActivity, R.color.suggestion_text_white)),
-                Pair(R.drawable.suggestion_button_red, ContextCompat.getColor(this@MainActivity, R.color.suggestion_text_white))
-            )
-            
-            // Content description string resource IDs
-            val contentDescriptions = listOf(
-                R.string.suggestion_button_dog, R.string.suggestion_button_cat, R.string.suggestion_button_car,
-                R.string.suggestion_button_airplane, R.string.suggestion_button_apple, R.string.suggestion_button_ball,
-                R.string.suggestion_button_bird, R.string.suggestion_button_flower, R.string.suggestion_button_fish,
-                R.string.suggestion_button_train, R.string.suggestion_button_cookie, R.string.suggestion_button_book
-            )
-            
-            // Shuffle color variants to ensure random assignment but avoid adjacent duplicates
-            val shuffledColors = colorVariants.shuffled()
-            
-            suggestions.forEachIndexed { index, item ->
-                // Use modulo to cycle through colors if we have more suggestions than colors
-                val colorIndex = index % shuffledColors.size
-                val (backgroundDrawable, textColor) = shuffledColors[colorIndex]
+            val button = Button(this@MainActivity).apply {
+                text = item
+                textSize = 22f  // Increased from 16f for better child readability
+                setBackgroundResource(backgroundDrawable)
+                setTextColor(textColor)
+                elevation = 6f  // Increased elevation for better depth
+                typeface = android.graphics.Typeface.DEFAULT_BOLD
+                isAllCaps = false
+                letterSpacing = 0.05f
                 
-                val button = Button(this@MainActivity).apply {
-                    text = item
-                    textSize = 22f  // Increased from 16f for better child readability
-                    setBackgroundResource(backgroundDrawable)
-                    setTextColor(textColor)
-                    elevation = 6f  // Increased elevation for better depth
-                    typeface = android.graphics.Typeface.DEFAULT_BOLD
-                    isAllCaps = false
-                    letterSpacing = 0.05f
-                    
-                    // Accessibility enhancements
-                    contentDescription = getString(contentDescriptions[index])
-                    importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_YES
-                    
-                    // Ensure minimum touch target size (48dp)
-                    val minTouchTarget = resources.getDimensionPixelSize(android.R.dimen.app_icon_size)
-                    minHeight = minTouchTarget
-                    minWidth = minTouchTarget
-                    
-                    // Set layout params for grid positioning with increased margins for better spacing
-                    val params = GridLayout.LayoutParams().apply {
-                        width = 0
-                        height = GridLayout.LayoutParams.WRAP_CONTENT
-                        columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f)
-                        rowSpec = GridLayout.spec(GridLayout.UNDEFINED)
-                        setMargins(12, 12, 12, 12)  // Increased margins from 8dp to 12dp
-                    }
-                    layoutParams = params
-                    
-                    setOnClickListener {
-                        handleSuggestionClick(item)
-                    }
+                // Accessibility enhancements
+                contentDescription = getString(contentDescriptions[index])
+                importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_YES
+                
+                // Ensure minimum touch target size (48dp)
+                val minTouchTarget = resources.getDimensionPixelSize(android.R.dimen.app_icon_size)
+                minHeight = minTouchTarget
+                minWidth = minTouchTarget
+                
+                // Set layout params for grid positioning with increased margins for better spacing
+                val params = GridLayout.LayoutParams().apply {
+                    width = 0
+                    height = GridLayout.LayoutParams.WRAP_CONTENT
+                    columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f)
+                    rowSpec = GridLayout.spec(GridLayout.UNDEFINED)
+                    setMargins(12, 12, 12, 12)  // Increased margins from 8dp to 12dp
                 }
-                addView(button)
+                layoutParams = params
+                
+                setOnClickListener {
+                    handleSuggestionClick(item)
+                }
             }
+            suggestionsGrid.addView(button)
         }
     }
 

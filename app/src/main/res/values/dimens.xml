@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Margins and spacing -->
+    <dimen name="activity_horizontal_margin">32dp</dimen>
+    <dimen name="suggestion_button_margin">12dp</dimen>
+    
+    <!-- Top margins -->
+    <dimen name="error_text_top_margin">50dp</dimen>
+    <dimen name="listening_indicator_top_margin">100dp</dimen>
+    <dimen name="logo_top_margin">220dp</dimen>
+    <dimen name="suggestions_grid_top_margin">250dp</dimen>
+    
+    <!-- Bottom margins -->
+    <dimen name="ask_button_bottom_margin">80dp</dimen>
+    <dimen name="suggestions_grid_bottom_margin">160dp</dimen>
+    <dimen name="autoplay_button_bottom_margin">240dp</dimen>
+    <dimen name="autoplay_status_bottom_margin">320dp</dimen>
+    
+    <!-- Text sizes -->
+    <dimen name="listening_indicator_text_size">60sp</dimen>
+    <dimen name="ask_button_text_size">28sp</dimen>
+    <dimen name="autoplay_button_text_size">20sp</dimen>
+    <dimen name="autoplay_status_text_size">16sp</dimen>
+    <dimen name="error_text_size">14sp</dimen>
+    <dimen name="suggestion_button_text_size">22sp</dimen>
+    
+    <!-- Elevations -->
+    <dimen name="button_elevation">8dp</dimen>
+    <dimen name="suggestion_button_elevation">6dp</dimen>
+    
+    <!-- Other dimensions -->
+    <dimen name="button_letter_spacing">0.05</dimen>
+    <dimen name="suggestion_button_letter_spacing">0.05</dimen>
+    <dimen name="shadow_layer_radius">4dp</dimen>
+    <dimen name="shadow_layer_dx">2dp</dimen>
+    <dimen name="shadow_layer_dy">2dp</dimen>
+</resources>
