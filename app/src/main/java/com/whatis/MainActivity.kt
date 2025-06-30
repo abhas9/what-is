@@ -7,23 +7,18 @@ import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.os.AsyncTask
-import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.graphics.Color
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
 import android.speech.tts.TextToSpeech
 import android.util.Log
-import android.view.Gravity
 import android.view.View.IMPORTANT_FOR_ACCESSIBILITY_YES
-import android.view.ViewGroup
 import android.widget.*
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import com.whatis.BuildConfig
 import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
@@ -103,11 +98,9 @@ class MainActivity : Activity() {
         })
 
         // Add debug crash testing (long press on logo in debug builds)
-        if (BuildConfig.DEBUG) {
-            logoImageView.setOnLongClickListener {
-                testCrashHandler()
-                true
-            }
+        logoImageView.setOnLongClickListener {
+            testCrashHandler()
+            true
         }
 
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)

@@ -7,7 +7,7 @@
     <!-- Top margins -->
     <dimen name="error_text_top_margin">50dp</dimen>
     <dimen name="listening_indicator_top_margin">100dp</dimen>
-    <dimen name="logo_top_margin">220dp</dimen>
+    <dimen name="logo_top_margin">20dp</dimen>
     <dimen name="suggestions_grid_top_margin">250dp</dimen>
     
     <!-- Bottom margins -->
@@ -31,7 +31,7 @@
     <!-- Other dimensions -->
     <dimen name="button_letter_spacing">0.05</dimen>
     <dimen name="suggestion_button_letter_spacing">0.05</dimen>
-    <dimen name="shadow_layer_radius">4dp</dimen>
-    <dimen name="shadow_layer_dx">2dp</dimen>
-    <dimen name="shadow_layer_dy">2dp</dimen>
+    <dimen name="shadow_layer_radius">4</dimen>
+    <dimen name="shadow_layer_dx">2</dimen>
+    <dimen name="shadow_layer_dy">2</dimen>
 </resources>

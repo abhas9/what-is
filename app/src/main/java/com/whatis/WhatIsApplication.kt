@@ -8,7 +8,6 @@ import android.os.Looper
 import android.util.Log
 import android.widget.ScrollView
 import android.widget.TextView
-import com.whatis.BuildConfig
 import java.io.PrintWriter
 import java.io.StringWriter
 import java.lang.ref.WeakReference
@@ -30,12 +29,8 @@ class WhatIsApplication : Application() {
     
     override fun onCreate() {
         super.onCreate()
-        
-        // Only set up the crash handler in debug builds
-        if (BuildConfig.DEBUG) {
-            setupCrashHandler()
-            Log.d(TAG, "Debug crash handler initialized")
-        }
+        setupCrashHandler()
+        Log.d(TAG, "Debug crash handler initialized")
     }
     
     private fun setupCrashHandler() {
